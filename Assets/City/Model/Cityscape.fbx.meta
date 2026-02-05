@@ -3,7 +3,162 @@ guid: d715041722ba10b4d88a8738a9b5baee
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: AD_G_Glass2
+    second: {fileID: 2100000, guid: 037effea38681984eb6e17ced6ee0538, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: AD_W_Wall_Concrete
+    second: {fileID: 2100000, guid: 04b3fd221a57fd348b7808be0f8b108b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: FrontColor
+    second: {fileID: 2100000, guid: 0f6a1b7f148251346b7030a27be849a0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ID_F_Floor_Tile_Grey
+    second: {fileID: 2100000, guid: ced56f89586fe4c4f9bf0151bff350cf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ID_Metal_Paint_Grey
+    second: {fileID: 2100000, guid: f59c977960042df439a740ddb755b706, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ID_Wood_Ash
+    second: {fileID: 2100000, guid: 6f06fa9483e9abf45bd8742261fa31ee, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Grass
+    second: {fileID: 2100000, guid: a1fdb744fd5e2c24fbaf06e029e3e47f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Asphalt
+    second: {fileID: 2100000, guid: f73e507b3600d2c48a2ccee15f87ea5e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Asphalt_White
+    second: {fileID: 2100000, guid: 997084c4197e77b429efd87df22f38d0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Black_Paint
+    second: {fileID: 2100000, guid: b68b3f3835e67e8449bb2e32e352d95c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Black_Paint1
+    second: {fileID: 2100000, guid: 9c87445c6c2c8524b89fe49b22b8cf50, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Emergency
+    second: {fileID: 2100000, guid: 08a0c78deea652e4e8e4ba9bc3dd42c3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Green_Paint
+    second: {fileID: 2100000, guid: 95e2037c12386c04084f862991df68e5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Green_paint1
+    second: {fileID: 2100000, guid: 77695c68086d6e44898642356fd10a23, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Grey_Paint
+    second: {fileID: 2100000, guid: 923eeb99cb37b024e89292b18b45bc71, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Groundcover_Gravel
+    second: {fileID: 2100000, guid: 9bb39f58e40baa849a5e1b2aad12511d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Light_Green
+    second: {fileID: 2100000, guid: 2c792216c0e4e754e9c29e6254dcc1af, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Light_LED
+    second: {fileID: 2100000, guid: 11ac7830235306545869c1d5f4028949, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Light_Red
+    second: {fileID: 2100000, guid: 31910a42245e6bd408603b1062970c08, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Light_Yellow
+    second: {fileID: 2100000, guid: da6a2558bab05f844ba80fe8069a1060, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Orange_Paint
+    second: {fileID: 2100000, guid: fe912dc5212d5a14b9f02e4a510553dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Pave
+    second: {fileID: 2100000, guid: 849639694ee918a4798d3e93be7d1a0e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Pave1
+    second: {fileID: 2100000, guid: 62664896a2de6194fa165c751452280c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Red_Line
+    second: {fileID: 2100000, guid: 00e1908f62f83544195f5e1d9fec9909, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Smoke_Paint
+    second: {fileID: 2100000, guid: 1afc3a6ea84ed7a449525227e47a2ad4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Walking_Line
+    second: {fileID: 2100000, guid: 720e130a42efd4d4fae882317885d246, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_White_Paint
+    second: {fileID: 2100000, guid: d2c85ab091a9c7e41884fd05ee647a6f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_White_Paint1
+    second: {fileID: 2100000, guid: 1f7cf937ef32de845a58d22a65ec0566, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Yellow_Paint
+    second: {fileID: 2100000, guid: 1e3b22eb594ade44a8e7d40f2928ece5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Street_Yellow_Paint1
+    second: {fileID: 2100000, guid: 778128e1a48483641b5f09b5828b0914, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: _Sur_building
+    second: {fileID: 2100000, guid: 7e5cd4b0995788d4ea622107a31a051a, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
@@ -91,7 +246,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 0.000625
+    globalScale: 0.0625
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
