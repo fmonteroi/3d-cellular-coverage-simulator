@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -17,6 +16,14 @@ using UnityEngine;
 [DefaultExecutionOrder(-1000)] // Runs the first
 public class PatternGainReconstructor : MonoBehaviour
 {
+    // Reconstruction methods
+    public enum ReconstructionMethod
+    {
+        Gil2001,
+        Vasiliadis2005,
+        Omni
+    }
+
     // --------------------------------------------------
     // Input parameters
     // --------------------------------------------------
@@ -34,26 +41,12 @@ public class PatternGainReconstructor : MonoBehaviour
     [Range(0.1f, 8f)] public float omniPowerP = 1f;
     [Range(0f, 0.5f)] public float omniFloor = 0f;
 
-
-    [Header("Debug")]
-    public bool logAlignment = true;
-    public bool verboseLogs = true;
-
     // --------------------------------------------------
     // Internal state
     // --------------------------------------------------
 
-
     // Singleton instance
     public static PatternGainReconstructor Instance { get; private set; }
-
-    // Reconstructon methods
-    public enum ReconstructionMethod
-    {
-        Gil2001,
-        Vasiliadis2005,
-        Omni
-    }
 
     // Ready flag
     public bool IsReady { get; private set; }
@@ -63,15 +56,15 @@ public class PatternGainReconstructor : MonoBehaviour
     public float[,] GainDbRelativeMatrix { get; private set; }  // relative dB (0 at max)
     public float[,] GainDbiMatrix { get; private set; }         // absolute dBi if GAIN exists
 
-    // Metadata
+    // Info about absolute gain from header
     public bool HasAbsoluteGain => hasGain;
     public float MaxGainDbi => gainMaxDbi;
 
-    // Raw input slices
+    // Original slices
     readonly float[] attH = new float[360];
     readonly float[] attV = new float[360];
 
-    // Aligned slices
+    // Aligned attenuation slices
     readonly float[] attHAligned = new float[360];
     readonly float[] attVAligned = new float[360];
 
@@ -92,12 +85,21 @@ public class PatternGainReconstructor : MonoBehaviour
         // Singleton pattern
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning($"Duplicate {nameof(PatternGainReconstructor)} on {name}. Destroying duplicate.");
-            Destroy(this);
+            Destroy(gameObject);
             return;
         }
 
         Instance = this;
+
+        Compute();
+    }
+
+    void OnValidate()
+    {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
 
         Compute();
     }
@@ -107,6 +109,11 @@ public class PatternGainReconstructor : MonoBehaviour
     /// </summary>
     private void Compute()
     {
+        // Resets output matrices
+        GainLinearMatrix = null;
+        GainDbRelativeMatrix = null;
+        GainDbiMatrix = null;
+
         IsReady = false;
 
         if (method == ReconstructionMethod.Omni)
@@ -116,15 +123,13 @@ public class PatternGainReconstructor : MonoBehaviour
         else
         {
             if (!LoadMsiLikeCsv())
+            {
                 return;
-
+            }
             BuildGainMatrices();
         }
 
         IsReady = true;
-
-        if (verboseLogs)
-            Debug.Log($"[{nameof(PatternGainReconstructor)}] Matrix ready. Method={method}, size=181x360, absoluteDbi={(hasGain ? "yes" : "no")}");
     }
 
     // --------------------------------------------------
@@ -159,34 +164,6 @@ public class PatternGainReconstructor : MonoBehaviour
         return GainDbiMatrix[ClampTheta(thetaDeg), Wrap360(phiDeg)];
     }
 
-    /// <summary>
-    /// Gets normalized linear gain with bilinear interpolation.
-    /// </summary>
-    public float GetGainLinear(float thetaDeg, float phiDeg)
-    {
-        EnsureReady();
-        return SampleBilinearThetaPhi(GainLinearMatrix, thetaDeg, phiDeg);
-    }
-
-    /// <summary>
-    /// Gets relative dB gain with bilinear interpolation.
-    /// </summary>
-    public float GetGainDbRelative(float thetaDeg, float phiDeg)
-    {
-        EnsureReady();
-        return SampleBilinearThetaPhi(GainDbRelativeMatrix, thetaDeg, phiDeg);
-    }
-
-    /// <summary>
-    /// Gets absolute dBi gain with bilinear interpolation.
-    /// </summary>
-    public float GetGainDbi(float thetaDeg, float phiDeg)
-    {
-        EnsureReady();
-        return SampleBilinearThetaPhi(GainDbiMatrix, thetaDeg, phiDeg);
-    }
-
-
     // --------------------------------------------------
     // Prepare data from CSV
     // --------------------------------------------------
@@ -194,14 +171,14 @@ public class PatternGainReconstructor : MonoBehaviour
     {
         string path = Path.Combine(Application.streamingAssetsPath, fileName);
 
-        // If the file doesn't exist, logs an error and return false
+        // If the file doesn't exist, returns false
         if (!File.Exists(path))
         {
-            Debug.LogError("File not found: " + path);
+            Debug.LogError($"File not found: {path}");
             return false;
         }
 
-        // Reset arrays
+        // Resets arrays
         Array.Clear(attH, 0, attH.Length);
         Array.Clear(attV, 0, attV.Length);
         Array.Clear(attHAligned, 0, attHAligned.Length);
@@ -217,14 +194,16 @@ public class PatternGainReconstructor : MonoBehaviour
         bool readingH = false;
         bool readingV = false;
 
-        // Parse file line by line
+        // Parses file line by line
         foreach (string raw in File.ReadLines(path))
         {
             string line = raw.Trim();
             if (string.IsNullOrEmpty(line))
+            {
                 continue;
+            }
 
-            // Read GAIN from header
+            // Reads GAIN from header
             if (StartsWithToken(line, "GAIN"))
             {
                 if (TryExtractFirstFloatFromLine(line, out float gDbd))
@@ -236,7 +215,7 @@ public class PatternGainReconstructor : MonoBehaviour
                 continue;
             }
 
-            // Detect slice blocks
+            // Detects horizontal slice start
             if (StartsWithToken(line, "HORIZONTAL"))
             {
                 readingH = true;
@@ -244,6 +223,7 @@ public class PatternGainReconstructor : MonoBehaviour
                 continue;
             }
 
+            // Detects vertical slice start
             if (StartsWithToken(line, "VERTICAL"))
             {
                 readingH = false;
@@ -251,21 +231,32 @@ public class PatternGainReconstructor : MonoBehaviour
                 continue;
             }
 
-            // Ignore non-slice lines
+            // Ignores invalid lines
             if (!(readingH || readingV))
+            {
                 continue;
+            }
 
-            // Read numeric rows
+            // Reads numeric rows
             string[] parts = line.Split(new[] { '\t', ' ', ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 2)
+            {
                 continue;
+            }
+
 
             if (!TryParseFloat(parts[0], out float angleDeg))
+            {
                 continue;
-            if (!TryParseFloat(parts[1], out float valueDb))
-                continue;
+            }
 
-            // If 
+            if (!TryParseFloat(parts[1], out float valueDb))
+            {
+                continue;
+            }
+
+
+            // Maps angle to 0..359 index
             int a = Wrap360(Mathf.RoundToInt(angleDeg));
 
             if (readingH)
@@ -278,23 +269,22 @@ public class PatternGainReconstructor : MonoBehaviour
             }
         }
 
-        // Align H peak to phi = 0
-        int hPeak = ArgMin(attH);
-        int hShift = -hPeak;
+        // Aligns H minimum attenuation to phi = 0
+        int hMinIndex = ArgMin(attH);
+        int hShift = -hMinIndex;
         CircularShiftInto(attH, attHAligned, hShift);
 
-        // Align V peak to theta = 90
-        int vPeak = ArgMin(attV);
-        int vShift = 90 - vPeak;
+        // Aligns V minimum attenuation to theta = 90
+        int vMinIndex = ArgMin(attV);
+        int vShift = 90 - vMinIndex;
         CircularShiftInto(attV, attVAligned, vShift);
 
-        if (logAlignment)
-            Debug.Log($"Alignment: H peak={hPeak}° shift={hShift}, V peak={vPeak}° shift={vShift}");
-
-        // Convert aligned attenuation to normalized linear gain
+        // Converts aligned attenuation to normalized linear gain
         float hMin = MinArray(attHAligned);
         float vMin = MinArray(attVAligned);
 
+
+        // Converts from dB attenuation to linear gain
         for (int i = 0; i < 360; i++)
         {
             float hAtt = Mathf.Max(0f, attHAligned[i] - hMin);
@@ -304,20 +294,19 @@ public class PatternGainReconstructor : MonoBehaviour
             vLin[i] = Mathf.Pow(10f, -vAtt / 10f);
         }
 
-        // Split vertical cut for Gil
+        // Step 1 for Gil, used here not to it each time we evaluate a direction
         for (int t = 0; t <= 180; t++)
         {
             vFront[t] = vLin[t];
             vBack[t] = vLin[(t + 180) % 360];
         }
-
         return true;
     }
 
     // --------------------------------------------------
-    // 2) BUILD OUTPUT MATRICES
+    // Build matrices
     // --------------------------------------------------
-    void BuildGainMatrices()
+    private void BuildGainMatrices()
     {
         GainLinearMatrix = new float[181, 360];
         GainDbRelativeMatrix = new float[181, 360];
@@ -333,8 +322,17 @@ public class PatternGainReconstructor : MonoBehaviour
                 float gDbRel = 10f * Mathf.Log10(Mathf.Max(gLin, 1e-12f));
 
                 // Absolute dBi
-                float gDbi = hasGain ? gainMaxDbi + gDbRel : gDbRel;
+                float gDbi;
+                if (hasGain)
+                {
+                    gDbi = gainMaxDbi + gDbRel;
+                }
+                else
+                {
+                    gDbi = gDbRel;
+                }
 
+                // Save value in matrices
                 GainLinearMatrix[theta, phi] = gLin;
                 GainDbRelativeMatrix[theta, phi] = gDbRel;
                 GainDbiMatrix[theta, phi] = gDbi;
@@ -342,7 +340,7 @@ public class PatternGainReconstructor : MonoBehaviour
         }
     }
 
-    void BuildOmniMatrices()
+    private void BuildOmniMatrices()
     {
         GainLinearMatrix = new float[181, 360];
         GainDbRelativeMatrix = new float[181, 360];
@@ -353,10 +351,16 @@ public class PatternGainReconstructor : MonoBehaviour
 
         for (int theta = 0; theta <= 180; theta++)
         {
+            // Converts theta to radians
             float thetaRad = theta * Mathf.Deg2Rad;
+
+            // Gets gain from sine power pattern
             float gLin = Mathf.Pow(Mathf.Sin(thetaRad), omniPowerP);
+
+            // Applies floor
             gLin = Mathf.Lerp(omniFloor, 1f, gLin);
 
+            // Gets relative dB from linear gain
             float gDbRel = 10f * Mathf.Log10(Mathf.Max(gLin, 1e-12f));
 
             for (int phi = 0; phi < 360; phi++)
@@ -369,186 +373,191 @@ public class PatternGainReconstructor : MonoBehaviour
     }
 
     // --------------------------------------------------
-    // 3) RECONSTRUCTION DISPATCH
+    // Reconstruction methods
     // --------------------------------------------------
-    float EvaluateDirection(float thetaDeg, float phiDeg)
+    private float EvaluateDirection(int thetaDeg, int phiDeg)
     {
         switch (method)
         {
             case ReconstructionMethod.Gil2001:
-                return GainGilLinear(thetaDeg, phiDeg);
-
+                return CalculateGainByGil(thetaDeg, phiDeg);
             case ReconstructionMethod.Vasiliadis2005:
-                return GainVasiliadisLinear(thetaDeg, phiDeg);
-
-            case ReconstructionMethod.Omni:
-            {
-                float thetaRad = thetaDeg * Mathf.Deg2Rad;
-                float g = Mathf.Pow(Mathf.Sin(thetaRad), omniPowerP);
-                return Mathf.Lerp(omniFloor, 1f, g);
-            }
-
+                return CalculateGainByVasiliadis(thetaDeg, phiDeg);
             default:
                 return 0f;
         }
     }
 
     // --------------------------------------------------
-    // 4) GIL 2001
+    // GIL 2001
     // --------------------------------------------------
-    float GainGilLinear(float thetaDeg, float phiDeg)
+    private float CalculateGainByGil(int thetaDeg, int phiDeg)
     {
-        float thetaRad = Mathf.Clamp(thetaDeg, 0f, 180f) * Mathf.Deg2Rad;
-        float phiRad = Mathf.Repeat(phiDeg, 360f) * Mathf.Deg2Rad;
 
-        float Gh = SampleCircular360(hLin, phiDeg);
-        float GvF = SampleClamped181(vFront, thetaDeg);
-        float GvB = SampleClamped181(vBack, thetaDeg);
+        // Converts angles to radians
+        float thetaRad = thetaDeg * Mathf.Deg2Rad;
+        float phiRad = phiDeg * Mathf.Deg2Rad;
 
+
+        // 1 - Done in LoadMsiLikeCsv to avoid doing it each time we evaluate a direction
+
+        // 2 - Samples used values for a given direction
+
+        // Horizontal (Equator)
+        float Gh = hLin[Wrap360(phiDeg)];
+
+        // Vertical front
+        float GvF = vFront[ClampTheta(thetaDeg)];
+
+        // Vertical back
+        float GvB = vBack[ClampTheta(thetaDeg)];
+
+        // Poles
         float Gnorth = vFront[0];
         float Gsouth = vFront[180];
 
-        bool upper = thetaRad <= Mathf.PI * 0.5f;
+        // 3 - Choose hemisphere
+        bool upper = thetaRad <= Mathf.PI / 2f;
 
         float theta1, theta2;
         float Gtheta1, Gtheta2;
 
+        // 4 - Define distances in theta and limit values
+
+        // For upper hemisphere
         if (upper)
         {
             theta1 = thetaRad;
-            theta2 = (Mathf.PI * 0.5f) - thetaRad;
+            theta2 = (Mathf.PI / 2f) - thetaRad;
             Gtheta1 = Gnorth;
             Gtheta2 = Gh;
         }
-        else
+        else // For lower hemisphere
         {
-            theta1 = thetaRad - (Mathf.PI * 0.5f);
+            theta1 = thetaRad - (Mathf.PI / 2f);
             theta2 = Mathf.PI - thetaRad;
             Gtheta1 = Gh;
             Gtheta2 = Gsouth;
         }
 
-        float phiFold = (phiRad <= Mathf.PI) ? phiRad : (2f * Mathf.PI - phiRad);
-        float phi1 = phiFold;
-        float phi2 = Mathf.PI - phiFold;
+        // 5 - Define distances between phi and meridians
+        float phiFold; // min(phi, 2pi - phi)
+        if (phiRad <= Mathf.PI)
+        {
+            phiFold = phiRad;
+        }
+        else
+        {
+            phiFold = 2f * Mathf.PI - phiRad;
+        }
 
+        float phi1 = phiFold; // Distance to phi = 0
+        float phi2 = Mathf.PI - phiFold; // Distance to phi = pi
+
+        // 6 - Final formula
+
+        // Epsilon to avoid division by zero
         const float eps = 1e-6f;
 
-        if (phi1 < eps) return GvF;
-        if (phi2 < eps) return GvB;
+        // If phi is very close to 0 or 180, we can directly return the corresponding meridian gain
+        if (phi1 < eps)
+        {
+            return GvF;
+        }
 
-        float thetaSum = theta1 + theta2;
-        float phiSum = phi1 + phi2;
+        if (phi2 < eps)
+        {
+            return GvB;
+        }
 
-        float contTheta = (theta1 * theta2) / Mathf.Max(thetaSum * thetaSum, eps);
-        float contPhi = (phi1 * phi2) / Mathf.Max(phiSum * phiSum, eps);
+        // Continuity factors
+        float contTheta = (theta1 * theta2) / Mathf.Max((theta1 + theta2) * (theta1 + theta2), eps);
+        float contPhi = (phi1 * phi2) / Mathf.Max((phi1 + phi2) * (phi1 + phi2), eps);
 
+        // Main parts
         float partPhi = (phi1 * GvB + phi2 * GvF);
         float partTheta = (theta1 * Gtheta2 + theta2 * Gtheta1);
 
+        // Final gain
         float num = partPhi * contTheta + partTheta * contPhi;
         float den = (phi1 + phi2) * contTheta + (theta1 + theta2) * contPhi;
 
+        // Avoids division by zero
         float g = num / Mathf.Max(den, eps);
 
+        // Clamps to [0, 1] and handles NaN/Infinity
         if (float.IsNaN(g) || float.IsInfinity(g))
+        {
             g = 0f;
+        }
 
         return Mathf.Clamp01(g);
     }
 
     // --------------------------------------------------
-    // 5) VASILIADIS 2005
+    // VASILIADIS 2005
     // --------------------------------------------------
-    float GainVasiliadisLinear(float thetaDeg, float phiDeg)
+    private float CalculateGainByVasiliadis(int thetaDeg, int phiDeg)
     {
-        float h = SampleCircular360(hLin, phiDeg);
-        float v = SampleCircular360(vLin, thetaDeg);
+        // 1 - Sample normalized values
+        float h = hLin[Wrap360(phiDeg)];
+        float v = vLin[ClampTheta(thetaDeg)];
 
-        // Cross weights
+        // 2 - Cross weights
         float w1 = v * (1f - h);
         float w2 = h * (1f - v);
 
-        // k-normalization
+        // 3 - k-normalization
         float w1k = Mathf.Pow(Mathf.Max(w1, 0f), k);
         float w2k = Mathf.Pow(Mathf.Max(w2, 0f), k);
-        float denom = Mathf.Pow(w1k + w2k + 1e-12f, 1f / Mathf.Max(k, 0.001f));
+        float den = Mathf.Pow(w1k + w2k + 1e-12f, 1f / Mathf.Max(k, 0.001f));
 
-        float A1 = w1 / denom;
-        float A2 = w2 / denom;
+        float A1 = w1 / den;
+        float A2 = w2 / den;
 
-        // Combine in dB domain
-        float GHdB = 10f * Mathf.Log10(Mathf.Max(h, 1e-12f));
-        float GVdB = 10f * Mathf.Log10(Mathf.Max(v, 1e-12f));
-        float GhatDb = GHdB * A1 + GVdB * A2;
+        // 4 - Combine in dB and back to linear
+
+        // Combine
+        float GH = 10f * Mathf.Log10(Mathf.Max(h, 1e-12f));
+        float GV = 10f * Mathf.Log10(Mathf.Max(v, 1e-12f));
+        float GDb = GH * A1 + GV * A2;
 
         // Back to linear
-        float g = Mathf.Pow(10f, GhatDb / 10f);
+        float g = Mathf.Pow(10f, GDb / 10f);
 
         if (float.IsNaN(g) || float.IsInfinity(g))
+        {
             g = 0f;
+        }
 
         return Mathf.Clamp01(g);
     }
 
     // --------------------------------------------------
-    // 7) HELPERS
+    // HELPERS
     // --------------------------------------------------
-    static float SampleBilinearThetaPhi(float[,] matrix, float thetaDeg, float phiDeg)
+
+    // Returns the smallest value in an array
+    private static float MinArray(float[] arr)
     {
-        thetaDeg = Mathf.Clamp(thetaDeg, 0f, 180f);
-        phiDeg = Mathf.Repeat(phiDeg, 360f);
-
-        int t0 = Mathf.FloorToInt(thetaDeg);
-        int t1 = Mathf.Min(t0 + 1, 180);
-
-        int p0 = Mathf.FloorToInt(phiDeg) % 360;
-        int p1 = (p0 + 1) % 360;
-
-        float ft = thetaDeg - t0;
-        float fp = phiDeg - Mathf.Floor(phiDeg);
-
-        float a = Mathf.Lerp(matrix[t0, p0], matrix[t0, p1], fp);
-        float b = Mathf.Lerp(matrix[t1, p0], matrix[t1, p1], fp);
-
-        return Mathf.Lerp(a, b, ft);
-    }
-
-    static float SampleCircular360(float[] arr360, float deg)
-    {
-        deg = Mathf.Repeat(deg, 360f);
-
-        int i0 = Mathf.FloorToInt(deg) % 360;
-        int i1 = (i0 + 1) % 360;
-
-        float t = deg - Mathf.Floor(deg);
-        return Mathf.Lerp(arr360[i0], arr360[i1], t);
-    }
-
-    static float SampleClamped181(float[] arr181, float deg)
-    {
-        deg = Mathf.Clamp(deg, 0f, 180f);
-
-        int i0 = Mathf.FloorToInt(deg);
-        int i1 = Mathf.Min(i0 + 1, 180);
-
-        float t = deg - i0;
-        return Mathf.Lerp(arr181[i0], arr181[i1], t);
-    }
-
-    static float MinArray(float[] arr)
-    {
+        // Start with a very large value
         float m = float.PositiveInfinity;
+
+        // Check all elements
         for (int i = 0; i < arr.Length; i++)
             m = Mathf.Min(m, arr[i]);
+
         return m;
     }
 
-    static int ArgMin(float[] arr)
+    // Returns the index of the smallest value in an array
+    private static int ArgMin(float[] arr)
     {
+        // Start assuming the first valid minimum
         int idx = 0;
         float best = float.PositiveInfinity;
 
+        // Search for the smallest value
         for (int i = 0; i < arr.Length; i++)
         {
             if (arr[i] < best)
@@ -561,44 +570,63 @@ public class PatternGainReconstructor : MonoBehaviour
         return idx;
     }
 
-    static void CircularShiftInto(float[] src, float[] dst, int shift)
+    // Copies an array into another one with a circular shift
+    private static void CircularShiftInto(float[] src, float[] dst, int shift)
     {
         int n = src.Length;
 
         for (int i = 0; i < n; i++)
         {
+            // Compute shifted position
             int j = (i + shift) % n;
+
+            // Fix negative positions
             if (j < 0) j += n;
+
             dst[j] = src[i];
         }
     }
 
-    static int Wrap360(int deg)
+    // Wraps an angle to the 0..359 range
+    private static int Wrap360(int deg)
     {
-        deg %= 360;
-        if (deg < 0) deg += 360;
+        deg = deg % 360;
+
+        if (deg < 0)
+        {
+            deg += 360;
+        }
+
+
         return deg;
     }
 
-    static int ClampTheta(int deg)
+    // Clamps theta to the valid 0..180 range
+    private static int ClampTheta(int deg)
     {
         return Mathf.Clamp(deg, 0, 180);
     }
 
-    static bool TryParseFloat(string s, out float value)
+    // Tries to convert text into a float
+    private static bool TryParseFloat(string s, out float value)
     {
+        // Remove spaces and replace comma with dot
         s = s.Trim().Replace(",", ".");
+
         return float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
     }
 
-    static bool StartsWithToken(string line, string token)
+    // Checks if a line starts with a given word
+    private static bool StartsWithToken(string line, string token)
     {
         return line.StartsWith(token, StringComparison.OrdinalIgnoreCase);
     }
 
-    static bool TryExtractFirstFloatFromLine(string line, out float value)
+    // Finds the first number inside a line of text
+    private static bool TryExtractFirstFloatFromLine(string line, out float value)
     {
         Match m = Regex.Match(line, @"[-+]?\d+(?:[.,]\d+)?");
+
         if (!m.Success)
         {
             value = 0f;
@@ -608,9 +636,13 @@ public class PatternGainReconstructor : MonoBehaviour
         return TryParseFloat(m.Value, out value);
     }
 
-    void EnsureReady()
+    // Throws an error if the matrices are not ready yet
+    private void EnsureReady()
     {
         if (!IsReady || GainLinearMatrix == null || GainDbRelativeMatrix == null || GainDbiMatrix == null)
+        {
             throw new InvalidOperationException($"{nameof(PatternGainReconstructor)} is not ready yet.");
+        }
+
     }
 }
