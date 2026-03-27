@@ -1234,7 +1234,7 @@ MonoBehaviour:
   patternReconstructor: {fileID: 1874156725}
   transmitter: {fileID: 676777034}
   receiversParent: {fileID: 254893647}
-  gridSizeMeters: {x: 2, y: 2, z: 2}
+  gridSizeMeters: {x: 4, y: 4, z: 4}
   cellSizeMeters: 1
   txPowerDbm: 30
   rxGainDbi: 0
@@ -1248,9 +1248,9 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   lossPerBuildingDb: 10
-  pythonExecutablePath: PythonRuntime/Scripts/python.exe
+  pythonExecutablePath: PythonRuntime/python.exe
   pythonServerScriptPath: SimulatorBridge/unity_bridge_server.py
-  simulatorRootPath: Simulator
+  simulatorRootPath: SIMULATOR
   pythonStartupDelayMs: 1000
   receiverDebugPrefab: {fileID: 2454247474756459292, guid: aa4b08ecd0ac8404497825eef1952c2c, type: 3}
   voxelsData: []

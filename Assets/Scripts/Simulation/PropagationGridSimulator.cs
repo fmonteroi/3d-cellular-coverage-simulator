@@ -69,7 +69,7 @@ public class PropagationGridSimulator : MonoBehaviour
     [Min(0f)] public float lossPerBuildingDb = 10f;
 
     [Header("Python")]
-    public string pythonExecutablePath = @"PythonRuntime/Scripts/python.exe";
+    public string pythonExecutablePath = @"PythonRuntime/python.exe";
     public string pythonServerScriptPath = @"SimulatorBridge/unity_bridge_server.py";
     public string simulatorRootPath = @"SIMULATOR";
     [Min(100)] public int pythonStartupDelayMs = 1000;
@@ -124,7 +124,7 @@ public class PropagationGridSimulator : MonoBehaviour
             // Give Python time to start the local server
             Thread.Sleep(pythonStartupDelayMs);
 
-            Debug.Log("PropagationGridSimulator: Response sent to Python, waiting for results...");
+            Debug.Log("PropagationGridSimulator: Sending request to Python and waiting for results...");
 
             // Send the request and wait for the response
             ResponsePayloadDto response = SendRequest(port, payload);
@@ -457,6 +457,7 @@ public class PropagationGridSimulator : MonoBehaviour
                 --port: TCP port for the local server
                 --sim-root: path to the SIMULATOR folder
 
+            WorkingDirectory: Set to the Python runtime folder so the portable interpreter starts from its own directory
             UseShellExecute: Not to use the OS shell, required to redirect output
             RedirectStandardOutput: Captures python logs
             RedirectStandardError: Captures python errors
@@ -466,6 +467,7 @@ public class PropagationGridSimulator : MonoBehaviour
         {
             FileName = pythonPath,
             Arguments = $"-u \"{bridgePath}\" --port {port} --sim-root \"{simulatorPath}\"",
+            WorkingDirectory = Path.GetDirectoryName(pythonPath),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
