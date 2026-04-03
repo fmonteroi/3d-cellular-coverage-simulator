@@ -7,6 +7,9 @@ import socket
 import sys
 import types
 
+# Caches the last created channel
+CACHED_CHANNEL = None
+
 
 def parse_args():
     """Parse the command line arguments sent by Unity."""
@@ -19,10 +22,7 @@ def parse_args():
 
 
 def install_simulator_package(sim_root: str):
-    """Register the simulator root as the SIMULATOR package.
-
-    This allows Python to import modules seeing SIMULATOR as a valid package.
-    """
+    """Register the simulator root as the SIMULATOR package."""
     sim_root = os.path.abspath(sim_root)
 
     if "SIMULATOR" in sys.modules:
@@ -68,7 +68,12 @@ def get_model_parameters(
         parameters["alpha"] = parser[losses_model]["alpha"]
         parameters["beta"] = parser[losses_model]["beta"]
         parameters["gamma"] = parser[losses_model]["gamma"]
-        parameters["shadow_factor"] = ("0" if disable_shadowing else parser[losses_model]["shadow_factor"])
+        if disable_shadowing:
+            # Disables shadowing by forcing the factor to zero
+            parameters["shadow_factor"] = "0"
+        else:
+            # Uses the configured shadowing factor
+            parameters["shadow_factor"] = parser[losses_model]["shadow_factor"]
     else:
         raise ValueError(
             f"Loss model '{losses_model}' is not supported by this bridge."
@@ -77,27 +82,58 @@ def get_model_parameters(
     return parameters
 
 
+def get_channel(request: dict, sim_root: str):
+    """Get the current channel, reusing the last one if possible."""
+    from SIMULATOR.src.PROPAGATION_CHANNEL.propagation_channel import Channel
+
+    global CACHED_CHANNEL
+
+    # Reuse channel if was already created
+    if CACHED_CHANNEL is not None:
+        return CACHED_CHANNEL
+    
+    model_parameters = get_model_parameters(
+        sim_root=sim_root,
+        scenario=request["scenario"],
+        environment_type=request["environmentType"],
+        losses_model=request["lossesModel"],
+        disable_shadowing=request["disableShadowing"],
+    )
+
+    config_dir = (
+        os.path.join(sim_root, "Configuration", "model_config", "channels") + os.sep
+    )
+
+    # Create the channel only once
+    channel = Channel(
+        channel_id="CHANNEL_1",
+        scenario=request["scenario"],
+        environment=request["environmentType"],
+        losses_model=request["lossesModel"],
+        model_parameters=model_parameters,
+        config_file_path=config_dir,
+    )
+
+    CACHED_CHANNEL = channel
+    return channel
+
+
 def receive_json_request(connection: socket.socket):
     """Read one JSON request line from Unity."""
     data = bytearray()
 
     while True:
-        # Read up to 64KB
         chunk = connection.recv(65536)
 
-        # If chunk is empty
         if not chunk:
             break
 
-        # Check if the chunk contains a newline character, which indicates the end of the JSON message
         newline_index = chunk.find(b"\n")
 
-        # If a newline is found, append only the part of the chunk up to the newline and stop reading further
         if newline_index >= 0:
             data.extend(chunk[:newline_index])
             break
 
-        # Otherwise, append the entire chunk and continue reading
         data.extend(chunk)
 
     if not data:
@@ -108,10 +144,18 @@ def receive_json_request(connection: socket.socket):
 
 def send_json_response(connection: socket.socket, payload: dict):
     """Send one JSON response line to Unity."""
-    # Converts Python dictionary to a JSON
     message = json.dumps(payload, separators=(",", ":")) + "\n"
-    # Send the JSON message as bytes
     connection.sendall(message.encode("utf-8"))
+
+
+def build_error_response(error_message: str):
+    """Build a standard error response."""
+    return {"error": error_message, "results": [], "receiverResults": []}
+
+
+def build_empty_success_response():
+    """Build an empty success response."""
+    return {"error": "", "results": [], "receiverResults": []}
 
 
 def calculate_distance(
@@ -124,129 +168,244 @@ def calculate_distance(
     return math.sqrt(dx * dx + dy * dy + dz * dz)
 
 
-def simulate(request: dict, sim_root: str):
-    """Calculate path loss and received power for all voxel centers."""
-    # The import is realized here to ensure the SIMULATOR package is already registered
+def calculate_propagation_latency_ms(distance_meters: float):
+    """Calculate propagation latency from the traveled distance."""
+    speed_of_light_mps = 299792458.0
+    return (distance_meters / speed_of_light_mps) * 1000.0
+
+
+def read_common_request_data(request: dict):
+    """Extract the common values shared by all link calculations."""
+    return {
+        "tx_x": float(request["transmitterX"]),
+        "tx_y": float(request["transmitterY"]),
+        "tx_z": float(request["transmitterZ"]),
+        "tx_power_dbm": float(request["txPowerDbm"]),
+        "rx_gain_dbi": float(request["rxGainDbi"]),
+        "frequency_ghz": float(request["frequencyGHz"]),
+        "minimum_distance": max(float(request["minimumDistanceMeters"]), 0.001),
+        "bandwidth_mhz": max(float(request["bandwidthMHz"]), 0.001)
+    }
+
+
+def calculate_basic_link_metrics(
+    channel,
+    common_data: dict,
+    rx_x: float,
+    rx_y: float,
+    rx_z: float,
+    tx_gain_dbi: float,
+    building_collisions: int,
+    building_loss_db: float,
+):
+    """Calculate the basic metrics of one transmitter-receiver link."""
     from SIMULATOR.src.PROPAGATION_CHANNEL.propagation_channel import Channel
 
-    # Load channel parameters
-    model_parameters = get_model_parameters(
-        sim_root=sim_root,
-        scenario=request["scenario"],
-        environment_type=request["environmentType"],
-        losses_model=request["lossesModel"],
-        disable_shadowing=request["disableShadowing"],
+    # Compute 3D distance
+    distance = calculate_distance(
+        common_data["tx_x"],
+        common_data["tx_y"],
+        common_data["tx_z"],
+        rx_x,
+        rx_y,
+        rx_z,
     )
 
-    # Builds the path to the channel directory
-    config_dir = (
-        os.path.join(sim_root, "Configuration", "model_config", "channels") + os.sep
+    # Clamp the minimum valid distance
+    distance = max(distance, common_data["minimum_distance"])
+
+    # Compute base channel loss
+    base_path_loss_db = channel.path_loss(distance, common_data["frequency_ghz"])
+
+    # Add extra building loss
+    path_loss_db = base_path_loss_db + building_loss_db
+
+    # Compute received power
+    prx_dbm = Channel.link_budget(
+        tx_power=common_data["tx_power_dbm"],
+        tx_gain=tx_gain_dbi,
+        rx_gain=common_data["rx_gain_dbi"],
+        path_losses=path_loss_db,
     )
 
-    # Initializes propagation channel
-    channel = Channel(
-        channel_id="CHANNEL_1",
-        scenario=request["scenario"],
-        environment=request["environmentType"],
-        losses_model=request["lossesModel"],
-        model_parameters=model_parameters,
-        config_file_path=config_dir,
+    return {
+        "buildingCollisions": building_collisions,
+        "buildingLossDb": building_loss_db,
+        "distanceMeters": distance,
+        "basePathLossDb": base_path_loss_db,
+        "pathLossDb": path_loss_db,
+        "prxDbm": prx_dbm,
+    }
+    
+def calculate_mobile_link_metrics(
+    channel,
+    common_data: dict,
+    rx_x: float,
+    rx_y: float,
+    rx_z: float,
+    tx_gain_dbi: float,
+    building_collisions: int,
+    building_loss_db: float,
+    bandwidth_mhz: float,
+):
+    """Calculate the live metrics of one mobile receiver link."""
+    basic_metrics = calculate_basic_link_metrics(
+        channel=channel,
+        common_data=common_data,
+        rx_x=rx_x,
+        rx_y=rx_y,
+        rx_z=rx_z,
+        tx_gain_dbi=tx_gain_dbi,
+        building_collisions=building_collisions,
+        building_loss_db=building_loss_db,
     )
 
-    # Read parameters from the request
+    from SIMULATOR.src.PROPAGATION_CHANNEL.propagation_channel import Channel
+    import SIMULATOR.src.MATH_UTILS.formulas as f
 
-    # Transmitter position
-    tx_x = float(request["transmitterX"])
-    tx_y = float(request["transmitterY"])
-    tx_z = float(request["transmitterZ"])
+    # Compute propagation latency
+    propagation_latency_ms = calculate_propagation_latency_ms(
+        basic_metrics["distanceMeters"]
+    )
 
-    # Transmitter power, receiver gain and frequency
-    tx_power_dbm = float(request["txPowerDbm"])
-    rx_gain_dbi = float(request["rxGainDbi"])
-    frequency_ghz = float(request["frequencyGHz"])
-    minimum_distance = max(float(request["minimumDistanceMeters"]), 0.001)
+    # Convert received power from dBm to mW
+    rx_power_mw = f.to_units(basic_metrics["prxDbm"])
 
-    # Results list
+    # Compute SNR as SINR without external interference
+    snr_db = Channel.sinr(
+        rx_power=rx_power_mw,
+        bandwidth=bandwidth_mhz,
+        interferences=0.0,
+    )
+
+    basic_metrics["propagationLatencyMs"] = propagation_latency_ms
+    basic_metrics["snrDb"] = snr_db
+    return basic_metrics
+
+
+
+
+def simulate_grid(request: dict, sim_root: str):
+    """Calculate metrics for all grid voxels."""
+    channel = get_channel(request, sim_root)
+    common_data = read_common_request_data(request)
+
     results = []
 
     for voxel in request["voxels"]:
-        # Calculate the distance between the transmitter and the voxel center
-        distance = calculate_distance(
-            tx_x,
-            tx_y,
-            tx_z,
-            float(voxel["x"]),
-            float(voxel["y"]),
-            float(voxel["z"]),
+        metrics = calculate_basic_link_metrics(
+            channel=channel,
+            common_data=common_data,
+            rx_x=float(voxel["x"]),
+            rx_y=float(voxel["y"]),
+            rx_z=float(voxel["z"]),
+            tx_gain_dbi=float(voxel["txGainDbi"]),
+            building_collisions=int(voxel.get("buildingCollisions", 0)),
+            building_loss_db=float(voxel.get("buildingLossDb", 0.0)),
         )
 
-        # Ensure the distance is not below the minimum distance
-        distance = max(distance, minimum_distance)
-
-        # Calculates path loss
-        base_path_loss_db = channel.path_loss(distance, frequency_ghz)
-        
-        # Adds the extra loss caused by crossed buildings
-        building_loss_db = float(voxel.get("buildingLossDb", 0.0))
-        path_loss_db = base_path_loss_db + building_loss_db
-
-        # Calculates received power in dBm
-        prx_dbm = Channel.link_budget(
-            tx_power=tx_power_dbm,
-            tx_gain=float(voxel["txGainDbi"]),
-            rx_gain=rx_gain_dbi,
-            path_losses=path_loss_db,
-        )
-
-        # Append the result for this voxel
         results.append(
             {
                 "index": int(voxel["index"]),
-                "buildingCollisions": int(voxel.get("buildingCollisions", 0)),
-                "buildingLossDb": building_loss_db,
-                "distanceMeters": distance,
-                "pathLossDb": path_loss_db,
-                "prxDbm": prx_dbm,
+                "buildingCollisions": metrics["buildingCollisions"],
+                "buildingLossDb": metrics["buildingLossDb"],
+                "distanceMeters": metrics["distanceMeters"],
+                "pathLossDb": metrics["pathLossDb"],
+                "prxDbm": metrics["prxDbm"],
             }
         )
 
-    return {"error": "", "results": results}
+    return {"error": "", "results": results, "receiverResults": []}
+
+
+def simulate_mobile_receivers(request: dict, sim_root: str):
+    """Calculate live metrics for all mobile receivers."""
+    channel = get_channel(request, sim_root)
+    common_data = read_common_request_data(request)
+
+    receiver_results = []
+
+    for receiver in request["receivers"]:
+        metrics = calculate_mobile_link_metrics(
+            channel=channel,
+            common_data=common_data,
+            rx_x=float(receiver["x"]),
+            rx_y=float(receiver["y"]),
+            rx_z=float(receiver["z"]),
+            tx_gain_dbi=float(receiver["txGainDbi"]),
+            building_collisions=int(receiver.get("buildingCollisions", 0)),
+            building_loss_db=float(receiver.get("buildingLossDb", 0.0)),
+            bandwidth_mhz=common_data["bandwidth_mhz"]
+        )
+
+        receiver_results.append(
+            {
+                "id": str(receiver["id"]),
+                "txGainDbi": float(receiver["txGainDbi"]),
+                "buildingCollisions": metrics["buildingCollisions"],
+                "buildingLossDb": metrics["buildingLossDb"],
+                "distanceMeters": metrics["distanceMeters"],
+                "basePathLossDb": metrics["basePathLossDb"],
+                "pathLossDb": metrics["pathLossDb"],
+                "prxDbm": metrics["prxDbm"],
+                "snrDb": metrics["snrDb"],
+                "propagationLatencyMs": metrics["propagationLatencyMs"],
+            }
+        )
+
+    return {"error": "", "results": [], "receiverResults": receiver_results}
+
+
+def process_request(request: dict, sim_root: str):
+    """Route the request to the correct simulation path."""
+    request_type = request.get("requestType", "grid")
+
+    if request_type == "shutdown":
+        return build_empty_success_response(), True
+
+    if request_type == "grid":
+        return simulate_grid(request, sim_root), False
+
+    if request_type == "mobile_receivers":
+        return simulate_mobile_receivers(request, sim_root), False
+
+    return build_error_response(f"Unsupported requestType: {request_type}"), False
 
 
 def main():
-    """Run a one-shot local TCP bridge."""
-    # Receives the port and simulator root path from Unity
+    """Run a persistent local TCP bridge."""
     args = parse_args()
 
-    # Registers the SIMULATOR package to allow importing simulator modules
+    # Register the simulator package once
     install_simulator_package(args.sim_root)
 
-    # Creates a TCP socket
-    # With: automatically close the server socket when done
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-        # Socket configuration
+        # Configures the TCP server
+        # Allows to reuse the same port immediately after restarting the bridge
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", args.port))
-        server.listen(1)
-        server.settimeout(30.0)
+        server.listen(8)
+        server.settimeout(None)
 
-        # Notify Unity that the bridge is ready to accept one connection
         print(f"Bridge listening on 127.0.0.1:{args.port}", flush=True)
 
-        # Accepts Unity's connection
-        connection, _ = server.accept()
+        while True:
+            connection, _ = server.accept()
+            with connection:
+                connection.settimeout(30.0)
 
-        # Processes the request and send the response
-        with connection:
-            connection.settimeout(30.0)
-            try:
-                request = receive_json_request(connection)
-                response = simulate(request, args.sim_root)
-            except Exception as ex:
-                response = {"error": str(ex), "results": []}
+                try:
+                    request = receive_json_request(connection)
+                    response, should_stop = process_request(request, args.sim_root)
+                except Exception as ex:
+                    response = build_error_response(str(ex))
+                    should_stop = False
 
-            print(f"Response sent to Unity", flush=True)
-            send_json_response(connection, response)
+                send_json_response(connection, response)
+
+                if should_stop:
+                    print("Bridge shutdown requested", flush=True)
+                    break
 
 
 if __name__ == "__main__":

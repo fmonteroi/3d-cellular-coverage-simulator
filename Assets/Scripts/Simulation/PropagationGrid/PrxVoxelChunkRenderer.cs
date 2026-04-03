@@ -117,7 +117,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         Debug.Log($"PrxVoxelChunkRenderer: Built {chunkObjects.Count} chunk objects.");
     }
 
-    void CreateChunkObject(Vector3Int chunkCoord, List<VoxelData> chunkVoxelsList, float minPrx, float maxPrx)
+    private void CreateChunkObject(Vector3Int chunkCoord, List<VoxelData> chunkVoxelsList, float minPrx, float maxPrx)
     {
         // Builds the mesh of the chunk from its voxel list
         Mesh mesh = BuildChunkMesh(chunkVoxelsList, minPrx, maxPrx);
@@ -149,7 +149,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         chunkObjects.Add(chunkObject);
     }
 
-    Mesh BuildChunkMesh(List<VoxelData> samples, float minPrx, float maxPrx)
+    private Mesh BuildChunkMesh(List<VoxelData> samples, float minPrx, float maxPrx)
     {
         // Each voxel is a cube with 6 faces, each face has 4 vertices and 2 triangles (6 indices)
         int cubeCount = samples.Count;
@@ -262,19 +262,19 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         return mesh;
     }
 
-    float Normalize(float value, float minValue, float maxValue)
+    private float Normalize(float value, float minValue, float maxValue)
     {
         float range = maxValue - minValue;
 
         if (range <= 0.001f)
         {
-            return 0f;
+            return 1f;
         }
 
         return Mathf.Clamp01((value - minValue) / range);
     }
 
-    public void ClearChunks()
+    private void ClearChunks()
     {
         for (int i = 0; i < chunkObjects.Count; i++)
         {

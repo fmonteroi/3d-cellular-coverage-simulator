@@ -77,8 +77,8 @@ public class PatternGainReconstructor : MonoBehaviour
     readonly float[] vBack = new float[181];
 
     // Absolute gain from header
-    float gainMaxDbi = 0f;
-    bool hasGain = false;
+    private float gainMaxDbi = 0f;
+    private bool hasGain = false;
 
     void Awake()
     {
