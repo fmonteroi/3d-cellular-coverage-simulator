@@ -31,12 +31,10 @@ public class ReceiverMetricsPanel : MonoBehaviour
         metricsText.text =
             $"Distance: {m.distanceMeters:F2} m\n" +
             $"Building collisions: {m.buildingCollisions}\n" +
-            $"Building loss: {m.buildingLossDb:F2} dB\n" +
-            $"Base path loss: {m.basePathLossDb:F2} dB\n" +
-            $"Path loss: {m.pathLossDb:F2} dB\n" +
+            $"Path loss: {m.pathLossDb:F2} dB\n\n" +
             $"Prx: {m.prxDbm:F2} dBm\n" +
             $"SNR: {m.snrDb:F2} dB\n" +
-            $"Latency: {m.propagationLatencyMs:F6} ms";
+            $"Propagation Latency: {m.propagationLatencyMs:F6} ms";
     }
 
     public void ShowOverview()

@@ -91,7 +91,7 @@ def get_channel(request: dict, sim_root: str):
     # Reuse channel if was already created
     if CACHED_CHANNEL is not None:
         return CACHED_CHANNEL
-    
+
     model_parameters = get_model_parameters(
         sim_root=sim_root,
         scenario=request["scenario"],
@@ -184,7 +184,7 @@ def read_common_request_data(request: dict):
         "rx_gain_dbi": float(request["rxGainDbi"]),
         "frequency_ghz": float(request["frequencyGHz"]),
         "minimum_distance": max(float(request["minimumDistanceMeters"]), 0.001),
-        "bandwidth_mhz": max(float(request["bandwidthMHz"]), 0.001)
+        "bandwidth_mhz": max(float(request["bandwidthMHz"]), 0.001),
     }
 
 
@@ -236,7 +236,8 @@ def calculate_basic_link_metrics(
         "pathLossDb": path_loss_db,
         "prxDbm": prx_dbm,
     }
-    
+
+
 def calculate_mobile_link_metrics(
     channel,
     common_data: dict,
@@ -283,8 +284,6 @@ def calculate_mobile_link_metrics(
     return basic_metrics
 
 
-
-
 def simulate_grid(request: dict, sim_root: str):
     """Calculate metrics for all grid voxels."""
     channel = get_channel(request, sim_root)
@@ -326,16 +325,22 @@ def simulate_mobile_receivers(request: dict, sim_root: str):
     receiver_results = []
 
     for receiver in request["receivers"]:
+        # For mobile receivers, includes rx gain
+        receiver_common_data = common_data.copy()
+        receiver_common_data["rx_gain_dbi"] = float(
+            receiver.get("rxGainDbi", common_data["rx_gain_dbi"])
+        )
+
         metrics = calculate_mobile_link_metrics(
             channel=channel,
-            common_data=common_data,
+            common_data=receiver_common_data,
             rx_x=float(receiver["x"]),
             rx_y=float(receiver["y"]),
             rx_z=float(receiver["z"]),
             tx_gain_dbi=float(receiver["txGainDbi"]),
             building_collisions=int(receiver.get("buildingCollisions", 0)),
             building_loss_db=float(receiver.get("buildingLossDb", 0.0)),
-            bandwidth_mhz=common_data["bandwidth_mhz"]
+            bandwidth_mhz=common_data["bandwidth_mhz"],
         )
 
         receiver_results.append(

@@ -7,6 +7,9 @@ public class MobileReceiverMetrics : MonoBehaviour
 {
     public string receiverId = "MR_1";
 
+    [Header("Link budget")]
+    public float rxGainDbi = 30f;
+
     [Header("Current metrics")]
     public bool hasValidMetrics = false;
     public ReceiverMetricsSnapshot currentMetrics = new ReceiverMetricsSnapshot();

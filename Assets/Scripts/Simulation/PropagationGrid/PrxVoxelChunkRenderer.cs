@@ -162,7 +162,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         int[] triangles = new int[triangleCount];
 
         // Half size of the voxel, used to place corners around the center
-        float half = simulator.cellSizeMeters * 0.5f;
+        float half = simulator.voxelSizeMeters * 0.5f;
 
         // Local cube corners
         Vector3[] cubeVertices = new Vector3[]

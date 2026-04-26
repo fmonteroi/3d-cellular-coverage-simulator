@@ -4,7 +4,7 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 /// <summary>
-/// Builds a 3D receiver grid and stores the received power of each cell.
+/// Builds a 3D voxel grid and stores the received power of each voxel.
 /// </summary>
 [DefaultExecutionOrder(-900)] // Runs after PatternGainReconstructor
 public class PropagationGridSimulator : MonoBehaviour
@@ -21,7 +21,8 @@ public class PropagationGridSimulator : MonoBehaviour
 
     [Header("Grid")]
     public Vector3Int gridSizeMeters = new Vector3Int(10, 10, 10);
-    [Min(0.1f)] public float cellSizeMeters = 1f;
+    [Min(0.1f)] public float voxelSizeMeters = 1f;
+    public bool includeBuildingCollisions = true;
 
     [Header("Debug")]
     public GameObject receiverDebugPrefab;
@@ -91,6 +92,15 @@ public class PropagationGridSimulator : MonoBehaviour
         gridSizeMeters.z = Mathf.Clamp(gridSizeMeters.z, 1, 200);
     }
 
+    private Vector3Int GetVoxelCount()
+    {
+        return new Vector3Int(
+            Mathf.CeilToInt(gridSizeMeters.x / voxelSizeMeters),
+            Mathf.CeilToInt(gridSizeMeters.y / voxelSizeMeters),
+            Mathf.CeilToInt(gridSizeMeters.z / voxelSizeMeters)
+        );
+    }
+
     private void EnsureParentExists()
     {
         // If parent already assigned, it returns
@@ -111,13 +121,17 @@ public class PropagationGridSimulator : MonoBehaviour
 
     private BridgeRequestDto BuildGridRequest()
     {
+        // Calculates the number of voxels in each dimension
+        Vector3Int voxelCount = GetVoxelCount();
+        int totalVoxels = voxelCount.x * voxelCount.y * voxelCount.z;
+
         // Initializes voxel data list
-        voxelsData = new List<VoxelData>(gridSizeMeters.x * gridSizeMeters.y * gridSizeMeters.z);
+        voxelsData = new List<VoxelData>(totalVoxels);
 
         // Creates the request object sent to Python
         BridgeRequestDto request = settings.BuildBaseRequest();
         request.requestType = "grid";
-        request.voxels = new List<GridVoxelRequestDto>(gridSizeMeters.x * gridSizeMeters.y * gridSizeMeters.z);
+        request.voxels = new List<GridVoxelRequestDto>(totalVoxels);
         request.receivers = new List<MobileReceiverRequestDto>();
 
 
@@ -126,21 +140,29 @@ public class PropagationGridSimulator : MonoBehaviour
 
         int index = 0;
 
-        // Generates all cell centers in the 3D grid
+        // Generates all voxel centers in the 3D grid
         // Note: (YZX) order to make it by horizontal layers
-        for (int y = 0; y < gridSizeMeters.y; y++)
+        for (int y = 0; y < voxelCount.y; y++)
         {
-            for (int z = 0; z < gridSizeMeters.z; z++)
+            for (int z = 0; z < voxelCount.z; z++)
             {
-                for (int x = 0; x < gridSizeMeters.x; x++)
+                for (int x = 0; x < voxelCount.x; x++)
                 {
-                    // Center of the current cubic cell
-                    Vector3 center = gridOrigin + new Vector3((x + 0.5f) * cellSizeMeters, (y + 0.5f) * cellSizeMeters, (z + 0.5f) * cellSizeMeters);
+                    // Center of the current voxel
+                    Vector3 center = gridOrigin + new Vector3((x + 0.5f) * voxelSizeMeters, (y + 0.5f) * voxelSizeMeters, (z + 0.5f) * voxelSizeMeters);
 
                     // Evaluates propagation inputs in Unity
-                    float txGainDbi = settings.EvaluateTxGainDbi(center);
-                    int buildingCollisions = settings.CountBuildingCollisions(center);
-                    float buildingLossDb = buildingCollisions * settings.lossPerBuildingDb;
+                    string debugLabel = $"Voxel {x},{y},{z} Index={index}";
+                    float txGainDbi = settings.EvaluateTxGainDbi(center, debugLabel);
+                    // Counts building collisions and loss if enabled
+                    int buildingCollisions = 0;
+                    float buildingLossDb = 0f;
+
+                    if (includeBuildingCollisions)
+                    {
+                        buildingCollisions = settings.CountBuildingCollisions(center);
+                        buildingLossDb = buildingCollisions * settings.lossPerBuildingDb;
+                    }
 
                     // Store voxel data
                     VoxelData sample = new VoxelData();
@@ -191,7 +213,7 @@ public class PropagationGridSimulator : MonoBehaviour
         Vector3 gridCenter = settings.transmitter.position;
 
         // Computes the total grid size in meters
-        Vector3 gridWorldSize = new Vector3(gridSizeMeters.x * cellSizeMeters, gridSizeMeters.y * cellSizeMeters, gridSizeMeters.z * cellSizeMeters);
+        Vector3 gridWorldSize = new Vector3(gridSizeMeters.x, gridSizeMeters.y, gridSizeMeters.z);
 
         // Returns the minimum corner of the grid
         return gridCenter - (gridWorldSize * 0.5f);

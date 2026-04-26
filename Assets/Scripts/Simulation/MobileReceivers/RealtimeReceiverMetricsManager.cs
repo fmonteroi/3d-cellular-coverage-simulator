@@ -72,7 +72,7 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
             }
 
             Vector3 worldPosition = receiver.GetWorldPosition();
-            float txGainDbi = settings.EvaluateTxGainDbi(worldPosition);
+            float txGainDbi = settings.EvaluateTxGainDbi(worldPosition, $"Receiver {receiver.receiverId}");
             int buildingCollisions = settings.CountBuildingCollisions(worldPosition);
             float buildingLossDb = buildingCollisions * settings.lossPerBuildingDb;
 
@@ -82,6 +82,7 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
             receiverRequest.y = worldPosition.y;
             receiverRequest.z = worldPosition.z;
             receiverRequest.txGainDbi = txGainDbi;
+            receiverRequest.rxGainDbi = receiver.rxGainDbi;
             receiverRequest.buildingCollisions = buildingCollisions;
             receiverRequest.buildingLossDb = buildingLossDb;
 
@@ -120,7 +121,7 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
             snapshot.timeSeconds = Time.time;
             snapshot.worldPosition = receiver.GetWorldPosition();
             snapshot.txPowerDbm = settings.txPowerDbm;
-            snapshot.rxGainDbi = settings.rxGainDbi;
+            snapshot.rxGainDbi = receiver.rxGainDbi;
             snapshot.txGainDbi = result.txGainDbi;
             snapshot.distanceMeters = result.distanceMeters;
             snapshot.buildingCollisions = result.buildingCollisions;

@@ -44,15 +44,20 @@ public class PropagationSettings : MonoBehaviour
     [Min(0.001f)] public float minimumDistanceMeters = 1f;
     [Min(0.001f)] public float bandwidthMHz = 10f;
 
+
     [Header("Propagation channel")]
     public ScenarioType scenario = ScenarioType.Umi;
     public EnvironmentType environmentType = EnvironmentType.LOS;
     public LossesModelType lossesModel = LossesModelType.ABG;
     public bool disableShadowing = true;
 
+
     [Header("Building losses")]
     public LayerMask buildingLayerMask;
-    [Min(0f)] public float lossPerBuildingDb = 10f;
+    [Min(0f)] public float lossPerBuildingDb = 3f;
+
+    [Header("Debug")]
+    public bool showDebug = false;
 
     public bool ValidateSetup()
     {
@@ -76,11 +81,17 @@ public class PropagationSettings : MonoBehaviour
             Debug.LogError("PropagationSettings: PatternGainReconstructor is not ready.");
             return false;
         }
+        if (showDebug)
+        {
+            Debug.Log($"Ganancia en 90,90={patternReconstructor.GetGainDbi(90, 90)} dBi");
+            Debug.Log($"Ganancia en 90,0={patternReconstructor.GetGainDbi(90, 0)} dBi");
+            Debug.Log($"Ganancia en 90,270={patternReconstructor.GetGainDbi(90, 270)} dBi");
+        }
 
         return true;
     }
 
-    public float EvaluateTxGainDbi(Vector3 rxWorldPosition)
+    public float EvaluateTxGainDbi(Vector3 rxWorldPosition, string debugLabel = "")
     {
         // Direction from transmiter to receiver
         Vector3 worldDirection = rxWorldPosition - transmitter.position;
@@ -105,7 +116,17 @@ public class PropagationSettings : MonoBehaviour
         }
 
         // Read the absolute gain from the matrix
-        return patternReconstructor.GetGainDbi(theta, phi);
+        float gainDbi = patternReconstructor.GetGainDbi(theta, phi);
+
+        // Debug if enabled
+        if (showDebug)
+        {
+            Debug.Log($"{debugLabel} Theta={theta} Phi={phi} Gain={gainDbi} dBi");
+        }
+
+
+        // Read the absolute gain from the matrix
+        return gainDbi;
     }
 
 

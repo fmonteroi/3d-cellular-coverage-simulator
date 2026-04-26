@@ -744,6 +744,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MobileReceiverMetrics
   receiverId: MR_Car_1
+  rxGainDbi: 30
   hasValidMetrics: 0
   currentMetrics:
     timeSeconds: 0
@@ -834,6 +835,7 @@ GameObject:
   - component: {fileID: 676777034}
   - component: {fileID: 676777033}
   - component: {fileID: 676777032}
+  - component: {fileID: 676777035}
   m_Layer: 0
   m_Name: EmissionPoint
   m_TagString: Untagged
@@ -913,6 +915,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1485944383}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &676777035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676777030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfeaec7f5817992458211f3b037b716b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PatternGainMeshRenderer
+  reconstructor: {fileID: 1874156725}
+  radiusScale: 1
+  minRadius: 0.02
 --- !u!1 &723525886
 GameObject:
   m_ObjectHideFlags: 0
@@ -1365,7 +1382,8 @@ MonoBehaviour:
   buildingLayerMask:
     serializedVersion: 2
     m_Bits: 8
-  lossPerBuildingDb: 10
+  lossPerBuildingDb: 3
+  showDebug: 1
 --- !u!1 &922816897
 GameObject:
   m_ObjectHideFlags: 0
@@ -1539,8 +1557,8 @@ MonoBehaviour:
   simulator: {fileID: 2065136253}
   voxelMaterial: {fileID: 2100000, guid: d1a94ce66fd0b854ab062d231c4ed04e, type: 2}
   chunkSize: 10
-  minAlpha: 0.1
-  maxAlpha: 0.6
+  minAlpha: 0.01
+  maxAlpha: 0.2
 --- !u!1 &1186184842 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3477884103471009659, guid: d715041722ba10b4d88a8738a9b5baee, type: 3}
@@ -1698,6 +1716,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MobileReceiverMetrics
   receiverId: MR_Human_1
+  rxGainDbi: 30
   hasValidMetrics: 0
   currentMetrics:
     timeSeconds: 0
@@ -2824,8 +2843,9 @@ MonoBehaviour:
   settings: {fileID: 917592777}
   bridgeService: {fileID: 123601241}
   receiversParent: {fileID: 254893647}
-  gridSizeMeters: {x: 4, y: 4, z: 4}
-  cellSizeMeters: 1
+  gridSizeMeters: {x: 2, y: 2, z: 2}
+  voxelSizeMeters: 0.1
+  includeBuildingCollisions: 1
   receiverDebugPrefab: {fileID: 2454247474756459292, guid: aa4b08ecd0ac8404497825eef1952c2c, type: 3}
   voxelsData: []
 --- !u!4 &2065136254

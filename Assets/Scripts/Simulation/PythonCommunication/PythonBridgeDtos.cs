@@ -46,6 +46,7 @@ public class MobileReceiverRequestDto
     public float y;
     public float z;
     public float txGainDbi;
+    public float rxGainDbi;
     public int buildingCollisions;
     public float buildingLossDb;
 }
