@@ -744,7 +744,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MobileReceiverMetrics
   receiverId: MR_Car_1
-  rxGainDbi: 30
+  rxGainDbi: 6
   hasValidMetrics: 0
   currentMetrics:
     timeSeconds: 0
@@ -1716,7 +1716,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MobileReceiverMetrics
   receiverId: MR_Human_1
-  rxGainDbi: 30
+  rxGainDbi: 2
   hasValidMetrics: 0
   currentMetrics:
     timeSeconds: 0

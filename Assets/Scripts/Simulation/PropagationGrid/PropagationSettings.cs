@@ -83,9 +83,17 @@ public class PropagationSettings : MonoBehaviour
         }
         if (showDebug)
         {
-            Debug.Log($"Ganancia en 90,90={patternReconstructor.GetGainDbi(90, 90)} dBi");
-            Debug.Log($"Ganancia en 90,0={patternReconstructor.GetGainDbi(90, 0)} dBi");
-            Debug.Log($"Ganancia en 90,270={patternReconstructor.GetGainDbi(90, 270)} dBi");
+            //Debug.Log($"Ganancia en 90,90={patternReconstructor.GetGainDbi(90, 90)} dBi");
+            //Debug.Log($"Ganancia en 90,0={patternReconstructor.GetGainDbi(90, 0)} dBi");
+            //Debug.Log($"Ganancia en 90,270={patternReconstructor.GetGainDbi(90, 270)} dBi");
+            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(0, 185)} dBi");
+            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(90, 185)} dBi");
+            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(180, 185)} dBi");
+            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(270, 185)} dBi");
+            Debug.Log($"Ganancia en 185,0={patternReconstructor.GetGainDbi(185, 0)} dBi");
+            Debug.Log($"Ganancia en 185,90={patternReconstructor.GetGainDbi(185, 90)} dBi");
+            Debug.Log($"Ganancia en 185,180={patternReconstructor.GetGainDbi(185, 180)} dBi");
+            Debug.Log($"Ganancia en 185,270={patternReconstructor.GetGainDbi(185, 270)} dBi");
         }
 
         return true;

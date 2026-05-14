@@ -147,7 +147,7 @@ public class PatternGainReconstructor : MonoBehaviour
 
     /// <summary>
     /// Gets relative dB gain.
-    /// 0 dB = maximum.
+    /// 16 dB = maximum.
     /// </summary>
     public float GetGainDbRelative(int thetaDeg, int phiDeg)
     {
