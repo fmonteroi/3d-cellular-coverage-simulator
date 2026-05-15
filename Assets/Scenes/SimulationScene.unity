@@ -1373,11 +1373,11 @@ MonoBehaviour:
   txPowerDbm: 30
   rxGainDbi: 0
   frequencyGHz: 1.785
-  minimumDistanceMeters: 1
+  minimumDistanceMeters: 0.001
   bandwidthMHz: 10
   scenario: 0
   environmentType: 0
-  lossesModel: 0
+  lossesModel: 1
   disableShadowing: 1
   buildingLayerMask:
     serializedVersion: 2

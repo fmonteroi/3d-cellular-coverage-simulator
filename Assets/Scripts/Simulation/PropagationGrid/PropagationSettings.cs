@@ -83,17 +83,17 @@ public class PropagationSettings : MonoBehaviour
         }
         if (showDebug)
         {
-            //Debug.Log($"Ganancia en 90,90={patternReconstructor.GetGainDbi(90, 90)} dBi");
-            //Debug.Log($"Ganancia en 90,0={patternReconstructor.GetGainDbi(90, 0)} dBi");
-            //Debug.Log($"Ganancia en 90,270={patternReconstructor.GetGainDbi(90, 270)} dBi");
-            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(0, 185)} dBi");
-            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(90, 185)} dBi");
-            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(180, 185)} dBi");
-            Debug.Log($"Ganancia en 0,185={patternReconstructor.GetGainDbi(270, 185)} dBi");
-            Debug.Log($"Ganancia en 185,0={patternReconstructor.GetGainDbi(185, 0)} dBi");
-            Debug.Log($"Ganancia en 185,90={patternReconstructor.GetGainDbi(185, 90)} dBi");
-            Debug.Log($"Ganancia en 185,180={patternReconstructor.GetGainDbi(185, 180)} dBi");
-            Debug.Log($"Ganancia en 185,270={patternReconstructor.GetGainDbi(185, 270)} dBi");
+            LogTest(90, 0, "16.48 dBi");
+            LogTest(90, 90, "2.53 dBi");
+            LogTest(90, 180, "-18.82 dBi");
+            LogTest(90, 230, "-12.84 dBi");
+            LogTest(90, 270, "0.92 dBi");
+
+            LogTest(180, 0, "-18.30 dBi");
+            LogTest(0, 0, "-15.45 dBi");
+
+            // El de la reunion (0,185) matlab
+            LogTest(0, 185, "-35.62 dBi");
         }
 
         return true;
@@ -192,5 +192,16 @@ public class PropagationSettings : MonoBehaviour
             transmitterY = transmitter.position.y,
             transmitterZ = transmitter.position.z
         };
+    }
+
+    private void LogTest(int theta, int phi, string expected)
+    {
+        float relativeDb = patternReconstructor.GetGainDbRelative(theta, phi);
+        float absoluteDbi = patternReconstructor.GetGainDbi(theta, phi);
+
+        Debug.Log(
+            $"Angle (theta={theta} phi={phi}) " +
+            $"relative={relativeDb:F2} dB absolute={absoluteDbi:F2} dBi | {expected}"
+        );
     }
 }

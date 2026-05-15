@@ -269,14 +269,11 @@ public class PatternGainReconstructor : MonoBehaviour
             }
         }
 
-        // Aligns H minimum attenuation to phi = 0
-        int hMinIndex = ArgMin(attH);
-        int hShift = -hMinIndex;
-        CircularShiftInto(attH, attHAligned, hShift);
+        // Keep H cut in the original CSV azimuth convention
+        Array.Copy(attH, attHAligned, attH.Length);
 
-        // Aligns V minimum attenuation to theta = 90
-        int vMinIndex = ArgMin(attV);
-        int vShift = 90 - vMinIndex;
+        // Match theta = original vertical angle + 90
+        int vShift = 90;
         CircularShiftInto(attV, attVAligned, vShift);
 
         // Converts aligned attenuation to normalized linear gain
