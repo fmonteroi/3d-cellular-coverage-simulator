@@ -28,7 +28,9 @@ public class WaypointMover : MonoBehaviour
         }
 
         Vector3 direction = targetPoint.position - transform.position;
-        direction.y = 0f;
+
+        // Keeps the movement on the horizontal plane
+        // direction.y = 0f; 
 
         if (direction.sqrMagnitude <= reachDistance * reachDistance)
         {

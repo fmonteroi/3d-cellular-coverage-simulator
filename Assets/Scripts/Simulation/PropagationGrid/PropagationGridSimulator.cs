@@ -135,8 +135,8 @@ public class PropagationGridSimulator : MonoBehaviour
         request.receivers = new List<MobileReceiverRequestDto>();
 
 
-        // Gets the corner of the grid
-        Vector3 gridOrigin = GetGridOrigin();
+        // Gets the corner of the grid in transmitter local coordinates
+        Vector3 localGridOrigin = GetLocalGridOrigin();
 
         int index = 0;
 
@@ -149,7 +149,10 @@ public class PropagationGridSimulator : MonoBehaviour
                 for (int x = 0; x < voxelCount.x; x++)
                 {
                     // Center of the current voxel
-                    Vector3 center = gridOrigin + new Vector3((x + 0.5f) * voxelSizeMeters, (y + 0.5f) * voxelSizeMeters, (z + 0.5f) * voxelSizeMeters);
+                    Vector3 localCenter = localGridOrigin + new Vector3((x + 0.5f) * voxelSizeMeters, (y + 0.5f) * voxelSizeMeters, (z + 0.5f) * voxelSizeMeters);
+
+                    // Converts the local voxel center to world coordinates using transmitter rotation
+                    Vector3 center = settings.transmitter.position + settings.transmitter.rotation * localCenter;
 
                     // Evaluates propagation inputs in Unity
                     string debugLabel = $"Voxel {x},{y},{z} Index={index}";
@@ -207,16 +210,13 @@ public class PropagationGridSimulator : MonoBehaviour
         return request;
     }
 
-    private Vector3 GetGridOrigin()
+    private Vector3 GetLocalGridOrigin()
     {
-        // Center the grid on the transmitter position
-        Vector3 gridCenter = settings.transmitter.position;
-
         // Computes the total grid size in meters
         Vector3 gridWorldSize = new Vector3(gridSizeMeters.x, gridSizeMeters.y, gridSizeMeters.z);
 
-        // Returns the minimum corner of the grid
-        return gridCenter - (gridWorldSize * 0.5f);
+        // Returns the minimum corner of the grid in transmitter local coordinates
+        return -(gridWorldSize * 0.5f);
     }
 
     private GameObject CreateReceiverObject(int x, int y, int z, Vector3 center)

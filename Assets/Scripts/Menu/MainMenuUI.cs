@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class MainMenuUI : MonoBehaviour
+public class MainMenuUi : MonoBehaviour
 {
     [Header("Panels")]
     public GameObject mainPanel;

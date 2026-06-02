@@ -8,7 +8,10 @@ public class MobileReceiverMetrics : MonoBehaviour
     public string receiverId = "MR_1";
 
     [Header("Link budget")]
-    public float rxGainDbi = 30f;
+    public float rxGainDbi = 2f;
+
+    [Header("Receiver point")]
+    public Transform receiverPoint;
 
     [Header("Current metrics")]
     public bool hasValidMetrics = false;
@@ -16,6 +19,11 @@ public class MobileReceiverMetrics : MonoBehaviour
 
     public Vector3 GetWorldPosition()
     {
+        if (receiverPoint != null)
+        {
+            return receiverPoint.position;
+        }
+
         return transform.position;
     }
 

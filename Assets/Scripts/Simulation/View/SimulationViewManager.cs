@@ -1,17 +1,35 @@
 using System.Collections.Generic;
+using UnityEngine.UI;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// Switches between overview mode and mobile receiver views.
 /// </summary>
-public class ReceiverViewManager : MonoBehaviour
+public class SimulationViewManager : MonoBehaviour
 {
     public Camera targetCamera;
 
     [Header("Overview")]
     public Transform overviewCameraPoint;
     public Transform overviewLookPoint;
+
+    [Header("Overview controls")]
+    public GameObject overviewControlsPanel;
+    public Slider overviewZoomSlider;
+    public Slider overviewRotationSlider;
+
+    [Header("Radiation pattern")]
+    public Transform radiationPatternCameraPoint;
+    public Transform radiationPatternLookPoint;
+
+    [Header("Scene visibility")]
+    public GameObject prxVoxelRenderer;
+    public MeshRenderer patternMeshRenderer;
+
+    [Header("Camera UI")]
+    public TMP_Text cameraText;
 
     [Header("Receivers")]
     public List<MobileReceiverMetrics> receivers = new List<MobileReceiverMetrics>();
@@ -23,7 +41,7 @@ public class ReceiverViewManager : MonoBehaviour
     [Header("UI")]
     public ReceiverMetricsPanel metricsPanel;
 
-    int currentViewIndex = 0;
+    private int currentViewIndex = 0;
 
     void Start()
     {
@@ -42,6 +60,12 @@ public class ReceiverViewManager : MonoBehaviour
 
     private void HandleInput()
     {
+        // Do not switch views while the simulation is paused
+        if (Time.timeScale == 0f)
+        {
+            return;
+        }
+
         // Reads the current keyboard state from the Input System
         Keyboard keyboard = Keyboard.current;
 
@@ -68,7 +92,7 @@ public class ReceiverViewManager : MonoBehaviour
         currentViewIndex++;
 
         // Goes to overview after the last receiver
-        if (currentViewIndex > receivers.Count)
+        if (currentViewIndex >= receivers.Count + 2)
         {
             currentViewIndex = 0;
         }
@@ -84,7 +108,7 @@ public class ReceiverViewManager : MonoBehaviour
         // Goes to the last receiver when going left from overview
         if (currentViewIndex < 0)
         {
-            currentViewIndex = receivers.Count;
+            currentViewIndex = receivers.Count + 1;
         }
 
         // Refreshes the UI state after changing the view
@@ -93,28 +117,67 @@ public class ReceiverViewManager : MonoBehaviour
 
     private void ApplyView()
     {
-        if (metricsPanel == null)
-        {
-            return;
-        }
-
-        // In overview mode the metrics panel must stay hidden
         if (IsOverviewMode())
         {
-            metricsPanel.ShowOverview();
+            if (cameraText != null)
+            {
+                cameraText.text = "Overview";
+            }
+
+            if (overviewControlsPanel != null)
+            {
+                overviewControlsPanel.SetActive(true);
+            }
+
+            if (metricsPanel != null)
+            {
+                metricsPanel.HideMetrics();
+            }
+
+            SetSceneViewObjects(showVoxels: true, showPattern: false);
             return;
         }
 
-        // Gets the receiver associated with the active view index
+        if (overviewControlsPanel != null)
+        {
+            overviewControlsPanel.SetActive(false);
+        }
+
+
+        if (IsRadiationPatternMode())
+        {
+            if (cameraText != null)
+            {
+                cameraText.text = "Radiation pattern";
+            }
+
+            if (metricsPanel != null)
+            {
+                metricsPanel.HideMetrics();
+            }
+
+            SetSceneViewObjects(showVoxels: false, showPattern: true);
+            return;
+        }
+
         MobileReceiverMetrics receiver = GetCurrentReceiver();
 
         if (receiver == null)
         {
-            metricsPanel.ShowOverview();
             return;
         }
 
-        metricsPanel.ShowReceiver(receiver);
+        if (cameraText != null)
+        {
+            cameraText.text = $"Metrics {receiver.receiverId}";
+        }
+
+        if (metricsPanel != null)
+        {
+            metricsPanel.ShowMetrics(receiver);
+        }
+
+        SetSceneViewObjects(showVoxels: false, showPattern: false);
     }
 
     private void UpdateCamera()
@@ -166,8 +229,44 @@ public class ReceiverViewManager : MonoBehaviour
                 return false;
             }
 
-            desiredPosition = overviewCameraPoint.position;
             desiredLookPosition = overviewLookPoint.position;
+
+            Vector3 overviewDirection = overviewCameraPoint.position - overviewLookPoint.position;
+
+            float zoomMultiplier = 1f;
+
+            if (overviewZoomSlider != null)
+            {
+                // Slider to the right means closer camera
+                zoomMultiplier = overviewZoomSlider.maxValue + overviewZoomSlider.minValue - overviewZoomSlider.value;
+            }
+
+            float rotationDegrees = 0f;
+
+            if (overviewRotationSlider != null)
+            {
+                rotationDegrees = overviewRotationSlider.value;
+            }
+
+            Quaternion orbitRotation = Quaternion.AngleAxis(rotationDegrees, Vector3.up);
+
+            Vector3 rotatedDirection = orbitRotation * overviewDirection.normalized;
+            float overviewDistance = overviewDirection.magnitude * zoomMultiplier;
+
+            desiredPosition = overviewLookPoint.position + rotatedDirection * overviewDistance;
+            return true;
+        }
+
+        if (IsRadiationPatternMode())
+        {
+            // Radiation pattern mode uses fixed scene anchors for camera and look targets
+            if (radiationPatternCameraPoint == null || radiationPatternLookPoint == null)
+            {
+                return false;
+            }
+
+            desiredPosition = radiationPatternCameraPoint.position;
+            desiredLookPosition = radiationPatternLookPoint.position;
             return true;
         }
 
@@ -193,22 +292,11 @@ public class ReceiverViewManager : MonoBehaviour
         return true;
     }
 
-    private bool IsOverviewMode()
-    {
-        // Index 0 is the overview camera
-        return currentViewIndex == 0;
-    }
 
     private MobileReceiverMetrics GetCurrentReceiver()
     {
-        // Overview mode has no active receiver
-        if (currentViewIndex <= 0)
-        {
-            return null;
-        }
-
         // Convert the view index into the receiver list index
-        int receiverIndex = currentViewIndex - 1;
+        int receiverIndex = currentViewIndex - 2;
 
         // Guard against invalid indices
         if (receiverIndex < 0 || receiverIndex >= receivers.Count)
@@ -219,4 +307,33 @@ public class ReceiverViewManager : MonoBehaviour
         // Returns the current receiver
         return receivers[receiverIndex];
     }
+
+    private void SetSceneViewObjects(bool showVoxels, bool showPattern)
+    {
+        if (prxVoxelRenderer != null)
+        {
+            prxVoxelRenderer.SetActive(showVoxels);
+        }
+
+        if (patternMeshRenderer != null)
+        {
+            patternMeshRenderer.enabled = showPattern;
+        }
+    }
+
+    private bool IsOverviewMode()
+    {
+        return currentViewIndex == 0;
+    }
+
+    private bool IsRadiationPatternMode()
+    {
+        return currentViewIndex == 1;
+    }
+
+    private bool IsReceiverMode()
+    {
+        return currentViewIndex >= 2;
+    }
+
 }

@@ -37,13 +37,13 @@ public class ReceiverMetricsPanel : MonoBehaviour
             $"Propagation Latency: {m.propagationLatencyMs:F6} ms";
     }
 
-    public void ShowOverview()
+    public void HideMetrics()
     {
         currentReceiver = null;
         gameObject.SetActive(false);
     }
 
-    public void ShowReceiver(MobileReceiverMetrics receiver)
+    public void ShowMetrics(MobileReceiverMetrics receiver)
     {
         currentReceiver = receiver;
         gameObject.SetActive(true);
