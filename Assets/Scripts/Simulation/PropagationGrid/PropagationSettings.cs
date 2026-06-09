@@ -201,7 +201,7 @@ public class PropagationSettings : MonoBehaviour
 
         Debug.Log(
             $"Angle (theta={theta} phi={phi}) " +
-            $"relative={relativeDb:F2} dB absolute={absoluteDbi:F2} dBi | {expected}"
+            $"relative={relativeDb:F2} dB absolute={absoluteDbi:F2} dBi | Matlab expected: {expected}"
         );
     }
 }

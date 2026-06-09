@@ -17,8 +17,15 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
     [Header("Opacity")]
     public float minAlpha = 0.00f;
     public float maxAlpha = 0.50f;
+    public float alphaExponent = 5;
+
+    [Header("Visibility")]
+    [Range(0f, 1f)] public float visibilityThreshold = 0f;
 
     List<GameObject> chunkObjects = new List<GameObject>();
+    public float MinPrx { get; private set; }
+    public float MaxPrx { get; private set; }
+    public bool HasPrxRange { get; private set; }
 
     void Start()
     {
@@ -54,24 +61,27 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         }
 
         // Computes Prx range for normalization
-        float minPrx = float.PositiveInfinity;
-        float maxPrx = float.NegativeInfinity;
+        MinPrx = float.PositiveInfinity;
+        MaxPrx = float.NegativeInfinity;
+        HasPrxRange = false;
 
         // Loops through all voxels to find the min and max Prx values
         for (int i = 0; i < simulator.voxelsData.Count; i++)
         {
             float value = simulator.voxelsData[i].prxDbm;
 
-            if (value < minPrx)
+            if (value < MinPrx)
             {
-                minPrx = value;
+                MinPrx = value;
             }
 
-            if (value > maxPrx)
+            if (value > MaxPrx)
             {
-                maxPrx = value;
+                MaxPrx = value;
             }
         }
+
+        HasPrxRange = true;
 
         // Groups voxels by chunk
         Dictionary<Vector3Int, List<VoxelData>> chunks = new Dictionary<Vector3Int, List<VoxelData>>();
@@ -111,7 +121,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         foreach (Vector3Int chunkCoord in chunks.Keys)
         {
             List<VoxelData> chunkVoxelsList = chunks[chunkCoord];
-            CreateChunkObject(chunkCoord, chunkVoxelsList, minPrx, maxPrx);
+            CreateChunkObject(chunkCoord, chunkVoxelsList, MinPrx, MaxPrx);
         }
 
         Debug.Log($"PrxVoxelChunkRenderer: Built {chunkObjects.Count} chunk objects.");
@@ -124,6 +134,10 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
 
         // Creates one GameObject to render the chunk
         GameObject chunkObject = new GameObject($"VoxelChunk_{chunkCoord.x}_{chunkCoord.y}_{chunkCoord.z}");
+
+        // Sets the same layer as the owner of this script so it can be rendered by the same cameras
+        chunkObject.layer = gameObject.layer;
+
         // Parents the chunk object to the owner of this script
         chunkObject.transform.SetParent(transform, false);
 
@@ -151,15 +165,35 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
 
     private Mesh BuildChunkMesh(List<VoxelData> samples, float minPrx, float maxPrx)
     {
-        // Each voxel is a cube with 6 faces, each face has 4 vertices and 2 triangles (6 indices)
-        int cubeCount = samples.Count;
+        float normalizedPrx;
+
+        // Filters visible samples based on visibility threshold
+        List<VoxelData> visibleSamples = new List<VoxelData>();
+
+        for (int i = 0; i < samples.Count; i++)
+        {
+            normalizedPrx = Normalize(samples[i].prxDbm, minPrx, maxPrx);
+
+            if (normalizedPrx >= visibilityThreshold)
+            {
+                visibleSamples.Add(samples[i]);
+            }
+        }
+
+        // 1 - Calculate the required mesh size
+        // A cube uses 24 vertices: 6 faces * 4 vertices per face
+        // It also uses 36 triangle indices: 6 faces * 2 triangles * 3 indices
+
+        int cubeCount = visibleSamples.Count;
         int vertexCount = cubeCount * 24;
-        int triangleCount = cubeCount * 36;
+        int triangleIndexCount = cubeCount * 36;
 
         // Final mesh arrays
         Vector3[] vertices = new Vector3[vertexCount];
         Color[] colors = new Color[vertexCount];
-        int[] triangles = new int[triangleCount];
+        int[] triangles = new int[triangleIndexCount];
+
+        // 2 - Define the 8 basic corner positions of a cube
 
         // Half size of the voxel, used to place corners around the center
         float half = simulator.voxelSizeMeters * 0.5f;
@@ -180,35 +214,37 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
             new Vector3(-half,  half,  half),
         };
 
-        // 6 faces, 4 vertices each from the cubeVertices array
+        // 3 - Define which 4 basic corners form each cube face
+        // The vertex order determines the outward direction of each face normal
         int[][] faces = new int[][]
         {
-            new int[] { 0, 1, 2, 3 },
-            new int[] { 5, 4, 7, 6 },
-            new int[] { 4, 0, 3, 7 },
-            new int[] { 1, 5, 6, 2 },
-            new int[] { 3, 2, 6, 7 },
-            new int[] { 4, 5, 1, 0 }
+            new int[] { 3, 2, 1, 0 }, // Back
+            new int[] { 6, 7, 4, 5 }, // Front
+            new int[] { 7, 3, 0, 4 }, // Left
+            new int[] { 2, 6, 5, 1 }, // Right
+            new int[] { 7, 6, 2, 3 }, // Top
+            new int[] { 0, 1, 5, 4 }  // Bottom
         };
 
         // Offsets to keep track of where we are in the final mesh arrays
         int vertexOffset = 0;
         int triangleOffset = 0;
 
-        // Loops through all voxels of the chunk 
-        for (int i = 0; i < samples.Count; i++)
+        // Uses the transmitter rotation to orient each voxel with the grid
+        Quaternion voxelRotation = simulator.settings.transmitter.rotation;
+
+        // 4 - Build every visible voxel from the basic cube geometry
+        // Each local corner is rotated with the grid and moved to the voxel world position
+        for (int i = 0; i < visibleSamples.Count; i++)
         {
             // Gets the current voxel
-            VoxelData sample = samples[i];
+            VoxelData sample = visibleSamples[i];
 
             // Normalizes Prx
-            float normalized = Normalize(sample.prxDbm, minPrx, maxPrx);
+            normalizedPrx = Normalize(sample.prxDbm, minPrx, maxPrx);
 
-            // Encode Prx as red intensity and alpha
-            Color cubeColor = new Color(normalized, 0f, 0f, Mathf.Lerp(minAlpha, maxAlpha, normalized));
-
-            // Converts voxel center from world space to local mesh space
-            Vector3 localCenter = transform.InverseTransformPoint(sample.centerWorldPosition);
+            // Encode Prx as heat color + alpha
+            Color cubeColor = EvaluateHeatColor(normalizedPrx);
 
             // Loops through the 6 faces of the cube
             for (int face = 0; face < 6; face++)
@@ -216,19 +252,20 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
                 // First vertex index of this face
                 int faceVertexStart = vertexOffset + face * 4;
 
-                // Build the 4 vertices of the current face
-                vertices[faceVertexStart + 0] = localCenter + cubeVertices[faces[face][0]];
-                vertices[faceVertexStart + 1] = localCenter + cubeVertices[faces[face][1]];
-                vertices[faceVertexStart + 2] = localCenter + cubeVertices[faces[face][2]];
-                vertices[faceVertexStart + 3] = localCenter + cubeVertices[faces[face][3]];
+                // 5 - Duplicate the 4 required corners for each face
+                // This produces the 24 independent vertices used by the final cube
+                vertices[faceVertexStart + 0] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][0]]);
+                vertices[faceVertexStart + 1] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][1]]);
+                vertices[faceVertexStart + 2] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][2]]);
+                vertices[faceVertexStart + 3] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][3]]);
 
-                // Assign the same color to the 4 vertices of the face
+                // 6 - Assign the same color to the 4 vertices of the face
                 colors[faceVertexStart + 0] = cubeColor;
                 colors[faceVertexStart + 1] = cubeColor;
                 colors[faceVertexStart + 2] = cubeColor;
                 colors[faceVertexStart + 3] = cubeColor;
 
-                // Build the 2 triangles of the current face
+                // 7 - Build the 2 triangles of the current face
                 triangles[triangleOffset + 0] = faceVertexStart + 0;
                 triangles[triangleOffset + 1] = faceVertexStart + 1;
                 triangles[triangleOffset + 2] = faceVertexStart + 2;
@@ -244,7 +281,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
             vertexOffset += 24;
         }
 
-        // Creates the final mesh object
+        // 8 - Create the Unity mesh from the generated vertices, colors, and triangle indices.
         Mesh mesh = new Mesh();
         mesh.name = "PrxVoxelChunkMesh";
 
@@ -285,5 +322,22 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         }
 
         chunkObjects.Clear();
+    }
+
+    private Color EvaluateHeatColor(float normalizedPrx)
+    {
+        normalizedPrx = Mathf.Clamp01(normalizedPrx);
+
+        float alphaFactor = Mathf.Pow(normalizedPrx, alphaExponent);
+
+        Color color = new Color(normalizedPrx, 0f, 0f, Mathf.Lerp(minAlpha, maxAlpha, alphaFactor));
+
+        return color;
+    }
+
+    public void SetVisibilityThreshold(float threshold)
+    {
+        visibilityThreshold = Mathf.Clamp01(threshold);
+        BuildChunks();
     }
 }

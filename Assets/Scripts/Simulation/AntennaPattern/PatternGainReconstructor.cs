@@ -61,20 +61,20 @@ public class PatternGainReconstructor : MonoBehaviour
     public float MaxGainDbi => gainMaxDbi;
 
     // Original slices
-    readonly float[] attH = new float[360];
-    readonly float[] attV = new float[360];
+    private float[] attH = new float[360];
+    private float[] attV = new float[360];
 
     // Aligned attenuation slices
-    readonly float[] attHAligned = new float[360];
-    readonly float[] attVAligned = new float[360];
+    private float[] attHAligned = new float[360];
+    private float[] attVAligned = new float[360];
 
     // Normalized linear slices
-    readonly float[] hLin = new float[360];
-    readonly float[] vLin = new float[360];
+    private float[] hLin = new float[360];
+    private float[] vLin = new float[360];
 
     // Vertical split for Gil
-    readonly float[] vFront = new float[181];
-    readonly float[] vBack = new float[181];
+    private float[] vFront = new float[181];
+    private float[] vBack = new float[181];
 
     // Absolute gain from header
     private float gainMaxDbi = 0f;

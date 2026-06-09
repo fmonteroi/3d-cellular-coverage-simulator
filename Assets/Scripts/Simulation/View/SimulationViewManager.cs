@@ -5,24 +5,29 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Switches between overview mode and mobile receiver views.
+/// Switches between heatmap view, pattern view and mobile receiver views.
 /// </summary>
 public class SimulationViewManager : MonoBehaviour
 {
     public Camera targetCamera;
 
-    [Header("Overview")]
-    public Transform overviewCameraPoint;
-    public Transform overviewLookPoint;
+    [Header("Heatmap view")]
+    public Transform heatmapViewCameraPoint;
+    public Transform heatmapViewLookPoint;
+    public GameObject heatmapViewControlPanel;
+    public Slider heatmapViewZoomSlider;
+    public Slider heatmapViewRotationSlider;
+    public Slider heatmapViewElevationSlider;
+    public GameObject mini2DHeatmapPanel;
+    public Heatmap2DPanel heatmap2DPanel;
 
-    [Header("Overview controls")]
-    public GameObject overviewControlsPanel;
-    public Slider overviewZoomSlider;
-    public Slider overviewRotationSlider;
-
-    [Header("Radiation pattern")]
-    public Transform radiationPatternCameraPoint;
-    public Transform radiationPatternLookPoint;
+    [Header("Pattern view")]
+    public Transform patternViewCameraPoint;
+    public Transform patternViewLookPoint;
+    public GameObject patternViewPanel;
+    public Slider patternViewZoomSlider;
+    public Slider patternViewRotationSlider;
+    public Slider patternViewElevationSlider;
 
     [Header("Scene visibility")]
     public GameObject prxVoxelRenderer;
@@ -45,7 +50,7 @@ public class SimulationViewManager : MonoBehaviour
 
     void Start()
     {
-        // Initialize the view to overview mode at the start
+        // Initialize the view to heatmap view at the start
         ApplyView();
     }
 
@@ -62,6 +67,12 @@ public class SimulationViewManager : MonoBehaviour
     {
         // Do not switch views while the simulation is paused
         if (Time.timeScale == 0f)
+        {
+            return;
+        }
+
+        // Do not switch views while the expanded heatmap is open
+        if (heatmap2DPanel != null && heatmap2DPanel.IsExpandedViewOpen)
         {
             return;
         }
@@ -91,7 +102,7 @@ public class SimulationViewManager : MonoBehaviour
     {
         currentViewIndex++;
 
-        // Goes to overview after the last receiver
+        // Goes to heatmap view after the last receiver
         if (currentViewIndex >= receivers.Count + 2)
         {
             currentViewIndex = 0;
@@ -105,7 +116,7 @@ public class SimulationViewManager : MonoBehaviour
     {
         currentViewIndex--;
 
-        // Goes to the last receiver when going left from overview
+        // Goes to the last receiver when going left from heatmap view
         if (currentViewIndex < 0)
         {
             currentViewIndex = receivers.Count + 1;
@@ -117,43 +128,60 @@ public class SimulationViewManager : MonoBehaviour
 
     private void ApplyView()
     {
-        if (IsOverviewMode())
+
+        if (heatmapViewControlPanel != null)
+        {
+            heatmapViewControlPanel.SetActive(false);
+        }
+
+        if (patternViewPanel != null)
+        {
+            patternViewPanel.SetActive(false);
+        }
+
+        if (metricsPanel != null)
+        {
+            metricsPanel.HideMetrics();
+        }
+
+        if (mini2DHeatmapPanel != null)
+        {
+            mini2DHeatmapPanel.SetActive(false);
+        }
+
+
+        if (IsHeatmapView())
         {
             if (cameraText != null)
             {
-                cameraText.text = "Overview";
+                cameraText.text = "Heatmap view";
             }
 
-            if (overviewControlsPanel != null)
+            if (heatmapViewControlPanel != null)
             {
-                overviewControlsPanel.SetActive(true);
+                heatmapViewControlPanel.SetActive(true);
             }
 
-            if (metricsPanel != null)
+            if (mini2DHeatmapPanel != null)
             {
-                metricsPanel.HideMetrics();
+                mini2DHeatmapPanel.SetActive(true);
             }
 
             SetSceneViewObjects(showVoxels: true, showPattern: false);
             return;
         }
 
-        if (overviewControlsPanel != null)
-        {
-            overviewControlsPanel.SetActive(false);
-        }
 
-
-        if (IsRadiationPatternMode())
+        if (IsPatternView())
         {
             if (cameraText != null)
             {
-                cameraText.text = "Radiation pattern";
+                cameraText.text = "Pattern view";
             }
 
-            if (metricsPanel != null)
+            if (patternViewPanel != null)
             {
-                metricsPanel.HideMetrics();
+                patternViewPanel.SetActive(true);
             }
 
             SetSceneViewObjects(showVoxels: false, showPattern: true);
@@ -189,7 +217,7 @@ public class SimulationViewManager : MonoBehaviour
         }
 
         // Resolve the desired camera position and look point for the current view
-        if (!TryGetCameraTargets(out Vector3 desiredPosition, out Vector3 desiredLookPosition))
+        if (!TreyGetViewTarget(out Vector3 desiredPosition, out Vector3 desiredLookPosition))
         {
             return;
         }
@@ -215,62 +243,23 @@ public class SimulationViewManager : MonoBehaviour
         );
     }
 
-    private bool TryGetCameraTargets(out Vector3 desiredPosition, out Vector3 desiredLookPosition)
+    private bool TreyGetViewTarget(out Vector3 desiredPosition, out Vector3 desiredLookPosition)
     {
         // Initialize out parameters with safe defaults
         desiredPosition = Vector3.zero;
         desiredLookPosition = Vector3.zero;
 
-        if (IsOverviewMode())
+        if (IsHeatmapView())
         {
-            // Overview mode uses fixed scene anchors for camera and look targets
-            if (overviewCameraPoint == null || overviewLookPoint == null)
-            {
-                return false;
-            }
-
-            desiredLookPosition = overviewLookPoint.position;
-
-            Vector3 overviewDirection = overviewCameraPoint.position - overviewLookPoint.position;
-
-            float zoomMultiplier = 1f;
-
-            if (overviewZoomSlider != null)
-            {
-                // Slider to the right means closer camera
-                zoomMultiplier = overviewZoomSlider.maxValue + overviewZoomSlider.minValue - overviewZoomSlider.value;
-            }
-
-            float rotationDegrees = 0f;
-
-            if (overviewRotationSlider != null)
-            {
-                rotationDegrees = overviewRotationSlider.value;
-            }
-
-            Quaternion orbitRotation = Quaternion.AngleAxis(rotationDegrees, Vector3.up);
-
-            Vector3 rotatedDirection = orbitRotation * overviewDirection.normalized;
-            float overviewDistance = overviewDirection.magnitude * zoomMultiplier;
-
-            desiredPosition = overviewLookPoint.position + rotatedDirection * overviewDistance;
-            return true;
+            return TryCalculateCameraTransform(heatmapViewCameraPoint, heatmapViewLookPoint, heatmapViewZoomSlider, heatmapViewRotationSlider, heatmapViewElevationSlider, out desiredPosition, out desiredLookPosition);
         }
 
-        if (IsRadiationPatternMode())
+        if (IsPatternView())
         {
-            // Radiation pattern mode uses fixed scene anchors for camera and look targets
-            if (radiationPatternCameraPoint == null || radiationPatternLookPoint == null)
-            {
-                return false;
-            }
-
-            desiredPosition = radiationPatternCameraPoint.position;
-            desiredLookPosition = radiationPatternLookPoint.position;
-            return true;
+            return TryCalculateCameraTransform(patternViewCameraPoint, patternViewLookPoint, patternViewZoomSlider, patternViewRotationSlider, patternViewElevationSlider, out desiredPosition, out desiredLookPosition);
         }
 
-        // Receiver mode follows the currently selected receiver
+        // Receiver view follows the currently selected receiver
         MobileReceiverMetrics receiver = GetCurrentReceiver();
 
         if (receiver == null)
@@ -289,6 +278,68 @@ public class SimulationViewManager : MonoBehaviour
         // Read the camera follow position and look point from the receiver
         desiredPosition = viewTarget.GetCameraPosition();
         desiredLookPosition = viewTarget.GetLookPosition();
+        return true;
+    }
+
+    private bool TryCalculateCameraTransform(Transform cameraPoint, Transform lookPoint, Slider zoomSlider, Slider rotationSlider,
+                                        Slider elevationSlider, out Vector3 desiredPosition, out Vector3 desiredLookPosition)
+    {
+        desiredPosition = Vector3.zero;
+        desiredLookPosition = Vector3.zero;
+
+        if (cameraPoint == null || lookPoint == null)
+        {
+            return false;
+        }
+
+        desiredLookPosition = lookPoint.position;
+
+        // Original direction and distance from the target to the camera
+        Vector3 originalDirection = cameraPoint.position - lookPoint.position;
+
+        if (originalDirection.sqrMagnitude <= 0.001f)
+        {
+            return false;
+        }
+
+        // Slider to the right means closer camera
+        float zoomMultiplier = 1f;
+
+        if (zoomSlider != null)
+        {
+            zoomMultiplier = zoomSlider.maxValue + zoomSlider.minValue - zoomSlider.value;
+        }
+
+        // Read the horizontal rotation
+        float horizontalDegrees = 0f;
+
+        if (rotationSlider != null)
+        {
+            horizontalDegrees = rotationSlider.value;
+        }
+
+        Quaternion horizontalRotation = Quaternion.AngleAxis(horizontalDegrees, Vector3.up);
+
+        Vector3 horizontalDirection = horizontalRotation * originalDirection.normalized;
+
+        // Read the vertical rotation
+        float elevationDegrees = 0f;
+
+        if (elevationSlider != null)
+        {
+            elevationDegrees = -elevationSlider.value;
+        }
+
+        Vector3 elevationAxis = Vector3.Cross(Vector3.up, horizontalDirection).normalized;
+
+        Quaternion elevationRotation = Quaternion.AngleAxis(elevationDegrees, elevationAxis);
+
+        Vector3 finalDirection = elevationRotation * horizontalDirection;
+
+        float finalDistance = originalDirection.magnitude * zoomMultiplier;
+
+        desiredPosition = lookPoint.position + finalDirection * finalDistance;
+
         return true;
     }
 
@@ -321,17 +372,17 @@ public class SimulationViewManager : MonoBehaviour
         }
     }
 
-    private bool IsOverviewMode()
+    private bool IsHeatmapView()
     {
         return currentViewIndex == 0;
     }
 
-    private bool IsRadiationPatternMode()
+    private bool IsPatternView()
     {
         return currentViewIndex == 1;
     }
 
-    private bool IsReceiverMode()
+    private bool IsReceiverView()
     {
         return currentViewIndex >= 2;
     }

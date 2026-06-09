@@ -20,7 +20,7 @@ public class PatternGainMeshRenderer : MonoBehaviour
     public PatternGainReconstructor reconstructor;
 
     [Header("Geometry")]
-    public float radiusScale = 1f;
+    public float radiusScale = 1.25f;
     public float minRadius = 0.02f;
 
     Mesh mesh;

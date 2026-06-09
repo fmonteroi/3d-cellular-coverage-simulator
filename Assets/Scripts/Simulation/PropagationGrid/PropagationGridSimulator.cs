@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -18,6 +19,8 @@ public class PropagationGridSimulator : MonoBehaviour
     public PropagationSettings settings;
     public PythonBridgeService bridgeService;
     public Transform receiversParent;
+    public PrxVoxelChunkRenderer voxelRenderer;
+    public SimulationLoadingPanel loadingPanel;
 
     [Header("Grid")]
     public Vector3Int gridSizeMeters = new Vector3Int(10, 10, 10);
@@ -27,69 +30,106 @@ public class PropagationGridSimulator : MonoBehaviour
     [Header("Debug")]
     public GameObject receiverDebugPrefab;
 
-    // Ready flag
     public bool ResultsReady { get; private set; }
+
+    public Vector3Int VoxelCount => GetVoxelCount();
 
     // Generated voxel data
     public List<VoxelData> voxelsData;
 
-    void Start()
+    private IEnumerator Start()
     {
         ResultsReady = false;
+
+        // Validate loading panel
+        if (loadingPanel == null)
+        {
+            yield break;
+        }
 
         // Validate shared settings
         if (settings == null || !settings.ValidateSetup())
         {
-            return;
+            loadingPanel.Show("Simulation setup error");
+            yield break;
         }
 
         // Validate bridge service
         if (bridgeService == null || !bridgeService.ValidateSetup())
         {
-            return;
+            loadingPanel.Show("Simulation setup error");
+            yield break;
+        }
+
+        // Validate renderer
+        if (voxelRenderer == null)
+        {
+            loadingPanel.Show("Simulation setup error");
+            yield break;
         }
 
         // Ensure parent object exists
         EnsureParentExists();
 
-        // Build the grid request
+        // Builds all voxel positions and prepares the request sent to Python
+        loadingPanel.Show("Building voxel grid...");
+        yield return null;
         BridgeRequestDto request = BuildGridRequest();
 
+        // Let Unity update the loading message before calling Python
+        BridgeResponseDto response;
+        loadingPanel.Show("Computing metrics...");
+        yield return null;
         try
         {
             // Send the grid request through the shared bridge
-            BridgeResponseDto response = bridgeService.SendRequest(request);
-
-            if (!string.IsNullOrEmpty(response.error))
-            {
-                Debug.LogError($"PropagationGridSimulator: Python error: {response.error}");
-                return;
-            }
-
-            // Copy the returned values into voxel data
-            ApplyResponse(response);
-
-            ResultsReady = true;
-            Debug.Log("PropagationGridSimulator: voxel grid simulation finished.");
-
-            PrxVoxelChunkRenderer renderer = FindFirstObjectByType<PrxVoxelChunkRenderer>();
-
-            if (renderer != null)
-            {
-                renderer.BuildChunks();
-            }
+            response = bridgeService.SendRequest(request);
         }
         catch (Exception ex)
         {
             Debug.LogError($"PropagationGridSimulator: {ex.Message}");
+            loadingPanel.Show("Simulation error");
+            yield break;
         }
+
+        if (!string.IsNullOrEmpty(response.error))
+        {
+            Debug.LogError($"PropagationGridSimulator: Python error: {response.error}");
+            loadingPanel.Show("Simulation error");
+            yield break;
+        }
+
+        // Copy the returned values into voxel data.
+        ApplyResponse(response);
+
+        ResultsReady = true;
+        Debug.Log("PropagationGridSimulator: voxel grid simulation finished.");
+
+        // Let Unity update the loading message before creating the visible voxels.
+        loadingPanel.Show("Drawing voxels...");
+        yield return null;
+
+        try
+        {
+            // Builds the renderer chunks with the new voxel data.
+            voxelRenderer.BuildChunks();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"PropagationGridSimulator: {ex.Message}");
+            loadingPanel.Show("Simulation error");
+            yield break;
+        }
+
+        // Hide the loading panel when the simulation is ready.
+        loadingPanel.Hide();
     }
 
     void OnValidate()
     {
-        gridSizeMeters.x = Mathf.Clamp(gridSizeMeters.x, 1, 200);
+        gridSizeMeters.x = Mathf.Clamp(gridSizeMeters.x, 1, 500);
         gridSizeMeters.y = Mathf.Clamp(gridSizeMeters.y, 1, 200);
-        gridSizeMeters.z = Mathf.Clamp(gridSizeMeters.z, 1, 200);
+        gridSizeMeters.z = Mathf.Clamp(gridSizeMeters.z, 1, 500);
     }
 
     private Vector3Int GetVoxelCount()
