@@ -16,6 +16,7 @@
 *.pidb
 *.booproj
 *.svd
+*.pdf
 
 sysinfo.txt
 
