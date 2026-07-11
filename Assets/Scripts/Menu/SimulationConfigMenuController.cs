@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// Controls the main menu configuration flow and stores the selected simulation values.
+/// </summary>
 public class SimulationConfigMenuController : MonoBehaviour
 {
     [Header("Panels")]
@@ -13,16 +16,21 @@ public class SimulationConfigMenuController : MonoBehaviour
     public GameObject antennaPropagationPanel;
     public GameObject gridAndReceiversPanel;
     public GameObject visualizationAndPerformancePanel;
+    public GameObject resultsAndGraphsPanel;
 
     [Header("Antenna & Propagation")]
     public TMP_Dropdown methodDropdown;
     public GameObject kSliderRow;
     public Slider kSlider;
     public TMP_Text kValueText;
+    public GameObject omniMaxGainRow;
+    public TMP_InputField omniMaxGainInput;
     public TMP_InputField txPowerInput;
     public TMP_InputField frequencyInput;
     public TMP_InputField bandwidthInput;
+    public GameObject scenarioRow;
     public TMP_Dropdown scenarioDropdown;
+    public GameObject environmentRow;
     public TMP_Dropdown environmentDropdown;
     public GameObject nlosAlert;
     public TMP_Dropdown lossesModelDropdown;
@@ -35,8 +43,8 @@ public class SimulationConfigMenuController : MonoBehaviour
     public TMP_Text voxelSizeValueText;
     public TMP_Text voxelCountText;
     public Toggle buildingCollisionsToggle;
-    public TMP_InputField carRxGainInput;
-    public TMP_InputField humanRxGainInput;
+    public TMP_InputField vehicularRxGainInput;
+    public TMP_InputField cellularRxGainInput;
 
 
     [Header("Visualization & Performance")]
@@ -48,6 +56,17 @@ public class SimulationConfigMenuController : MonoBehaviour
     public TMP_Text alphaExponentValueText;
     public TMP_Dropdown performanceModeDropdown;
 
+    [Header("Results & Graphs")]
+    public Toggle campusVehiclePrxDistanceToggle;
+    public Toggle campusVehicleSnrDistanceToggle;
+    public Toggle campusVehicleSnrTimeToggle;
+    public Toggle pedestrianPrxDistanceToggle;
+    public Toggle pedestrianSnrDistanceToggle;
+    public Toggle pedestrianSnrTimeToggle;
+    public Toggle linearVehiclePrxDistanceToggle;
+    public Toggle linearVehicleSnrDistanceToggle;
+    public Toggle linearVehicleSnrTimeToggle;
+
     private float[] voxelSizes = new float[] { 0.1f, 0.2f, 0.25f, 0.5f, 1f, 2f, 4f, 8f };
     private int currentVoxelSizeIndex = 4;
 
@@ -55,6 +74,9 @@ public class SimulationConfigMenuController : MonoBehaviour
     public Color validInputColor = new Color32(5, 94, 239, 255);
     public Color invalidInputColor = new Color32(224, 0, 0, 255);
 
+    /// <summary>
+    /// Initializes controls, loads saved values and shows the main panel.
+    /// </summary>
     void Start()
     {
         ConfigureControls();
@@ -63,9 +85,12 @@ public class SimulationConfigMenuController : MonoBehaviour
         ShowMainPanel();
     }
 
+    /// <summary>
+    /// Configures dropdown options, slider ranges and UI callbacks.
+    /// </summary>
     private void ConfigureControls()
     {
-        // Dropdown options shown in the menu
+        // Sets dropdown options shown in the menu
         methodDropdown.ClearOptions();
         methodDropdown.AddOptions(new List<string> { "Vasiliadis2005", "Gil2001", "Omni" });
 
@@ -81,12 +106,12 @@ public class SimulationConfigMenuController : MonoBehaviour
         performanceModeDropdown.ClearOptions();
         performanceModeDropdown.AddOptions(new List<string> { "Low", "Medium", "High" });
 
-        // Vasiliadis factor. Only used when the selected method is Vasiliadis
+        // Configures the Vasiliadis factor slider
         kSlider.minValue = 0.5f;
         kSlider.maxValue = 10f;
         kSlider.wholeNumbers = false;
 
-        // Alpha sliders
+        // Configures alpha sliders
         minAlphaSlider.minValue = 0f;
         minAlphaSlider.maxValue = 1f;
         minAlphaSlider.wholeNumbers = false;
@@ -99,10 +124,11 @@ public class SimulationConfigMenuController : MonoBehaviour
         alphaExponentSlider.maxValue = 10f;
         alphaExponentSlider.wholeNumbers = false;
 
-        // UI events
+        // Registers UI events
         methodDropdown.onValueChanged.AddListener(OnMethodChanged);
         kSlider.onValueChanged.AddListener(OnKSliderChanged);
         environmentDropdown.onValueChanged.AddListener(OnEnvironmentChanged);
+        lossesModelDropdown.onValueChanged.AddListener(OnLossesModelChanged);
         minAlphaSlider.onValueChanged.AddListener(OnMinAlphaSliderChanged);
         maxAlphaSlider.onValueChanged.AddListener(OnMaxAlphaSliderChanged);
         alphaExponentSlider.onValueChanged.AddListener(OnAlphaExponentSliderChanged);
@@ -112,6 +138,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         gridSizeZInput.onValueChanged.AddListener(OnGridInputChanged);
     }
 
+    /// <summary>
+    /// Loads the current static simulation configuration into the menu controls.
+    /// </summary>
     private void LoadConfig()
     {
 
@@ -130,6 +159,11 @@ public class SimulationConfigMenuController : MonoBehaviour
 
         kSlider.value = SimulationConfig.k;
 
+        if (omniMaxGainInput != null)
+        {
+            omniMaxGainInput.text = FormatFloat(SimulationConfig.omniMaxGainDbi, "F2");
+        }
+
         txPowerInput.text = FormatFloat(SimulationConfig.txPowerDbm, "F2");
         frequencyInput.text = FormatFloat(SimulationConfig.frequencyGHz, "F3");
         bandwidthInput.text = FormatFloat(SimulationConfig.bandwidthMHz, "F2");
@@ -146,26 +180,47 @@ public class SimulationConfigMenuController : MonoBehaviour
         currentVoxelSizeIndex = FindVoxelSizeIndex(SimulationConfig.voxelSizeMeters);
         buildingCollisionsToggle.isOn = SimulationConfig.buildingCollisions;
 
-        carRxGainInput.text = FormatFloat(SimulationConfig.carRxGainDbi, "F2");
-        humanRxGainInput.text = FormatFloat(SimulationConfig.humanRxGainDbi, "F2");
+        vehicularRxGainInput.text = FormatFloat(SimulationConfig.vehicularRxGainDbi, "F2");
+        cellularRxGainInput.text = FormatFloat(SimulationConfig.cellularRxGainDbi, "F2");
 
         minAlphaSlider.value = SimulationConfig.minAlpha;
         maxAlphaSlider.value = SimulationConfig.maxAlpha;
         alphaExponentSlider.value = SimulationConfig.alphaExponent;
 
         performanceModeDropdown.value = (int)SimulationConfig.performanceMode;
+
+        campusVehiclePrxDistanceToggle.isOn = SimulationConfig.campusVehicleGraphs.prxDistance;
+        campusVehicleSnrDistanceToggle.isOn = SimulationConfig.campusVehicleGraphs.snrDistance;
+        campusVehicleSnrTimeToggle.isOn = SimulationConfig.campusVehicleGraphs.snrTime;
+
+        pedestrianPrxDistanceToggle.isOn = SimulationConfig.pedestrianGraphs.prxDistance;
+        pedestrianSnrDistanceToggle.isOn = SimulationConfig.pedestrianGraphs.snrDistance;
+        pedestrianSnrTimeToggle.isOn = SimulationConfig.pedestrianGraphs.snrTime;
+
+        linearVehiclePrxDistanceToggle.isOn = SimulationConfig.linearVehicleGraphs.prxDistance;
+        linearVehicleSnrDistanceToggle.isOn = SimulationConfig.linearVehicleGraphs.snrDistance;
+        linearVehicleSnrTimeToggle.isOn = SimulationConfig.linearVehicleGraphs.snrTime;
     }
 
+    /// <summary>
+    /// Shows the initial menu panel.
+    /// </summary>
     public void ShowMainPanel()
     {
         ShowOnly(mainPanel);
     }
 
+    /// <summary>
+    /// Shows the antenna and propagation configuration panel.
+    /// </summary>
     public void ShowAntennaPropagationPanel()
     {
         ShowOnly(antennaPropagationPanel);
     }
 
+    /// <summary>
+    /// Validates antenna inputs and shows the grid and receiver panel.
+    /// </summary>
     public void ShowGridAndReceiversPanel()
     {
         if (!ValidateAntennaPropagationInputs())
@@ -176,6 +231,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         ShowOnly(gridAndReceiversPanel);
     }
 
+    /// <summary>
+    /// Validates grid and receiver inputs and shows the visualization panel.
+    /// </summary>
     public void ShowVisualizationAndPerformancePanel()
     {
         if (!ValidateGridAndReceiverInputs())
@@ -186,6 +244,17 @@ public class SimulationConfigMenuController : MonoBehaviour
         ShowOnly(visualizationAndPerformancePanel);
     }
 
+    /// <summary>
+    /// Shows the result graph selection panel.
+    /// </summary>
+    public void ShowResultsAndGraphsPanel()
+    {
+        ShowOnly(resultsAndGraphsPanel);
+    }
+
+    /// <summary>
+    /// Validates every input, saves the menu values and loads the simulation scene.
+    /// </summary>
     public void StartSimulation()
     {
         if (!ValidateAllInputs())
@@ -197,11 +266,17 @@ public class SimulationConfigMenuController : MonoBehaviour
         SceneManager.LoadScene("SimulationScene");
     }
 
+    /// <summary>
+    /// Closes the application build.
+    /// </summary>
     public void ExitApplication()
     {
         Application.Quit();
     }
 
+    /// <summary>
+    /// Selects the previous voxel size from the fixed list.
+    /// </summary>
     public void PreviousVoxelSize()
     {
         currentVoxelSizeIndex--;
@@ -215,6 +290,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         RefreshVoxelCount();
     }
 
+    /// <summary>
+    /// Selects the next voxel size from the fixed list.
+    /// </summary>
     public void NextVoxelSize()
     {
         currentVoxelSizeIndex++;
@@ -228,6 +306,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         RefreshVoxelCount();
     }
 
+    /// <summary>
+    /// Copies the current UI values into the static simulation configuration.
+    /// </summary>
     private void SaveUiIntoConfig()
     {
         if (methodDropdown.value == 0)
@@ -248,14 +329,18 @@ public class SimulationConfigMenuController : MonoBehaviour
         float txPowerDbm;
         float frequencyGHz;
         float bandwidthMHz;
-        float carRxGainDbi;
-        float humanRxGainDbi;
+        float omniMaxGainDbi;
+        float vehicularRxGainDbi;
+        float cellularRxGainDbi;
 
+        TryReadDecimal(omniMaxGainInput, out omniMaxGainDbi);
         TryReadDecimal(txPowerInput, out txPowerDbm);
         TryReadDecimal(frequencyInput, out frequencyGHz);
         TryReadDecimal(bandwidthInput, out bandwidthMHz);
-        TryReadDecimal(carRxGainInput, out carRxGainDbi);
-        TryReadDecimal(humanRxGainInput, out humanRxGainDbi);
+        TryReadDecimal(vehicularRxGainInput, out vehicularRxGainDbi);
+        TryReadDecimal(cellularRxGainInput, out cellularRxGainDbi);
+
+        SimulationConfig.omniMaxGainDbi = omniMaxGainDbi;
 
         SimulationConfig.txPowerDbm = txPowerDbm;
 
@@ -282,16 +367,31 @@ public class SimulationConfigMenuController : MonoBehaviour
         SimulationConfig.voxelSizeMeters = voxelSizes[currentVoxelSizeIndex];
         SimulationConfig.buildingCollisions = buildingCollisionsToggle.isOn;
 
-        SimulationConfig.carRxGainDbi = carRxGainDbi;
-        SimulationConfig.humanRxGainDbi = humanRxGainDbi;
+        SimulationConfig.vehicularRxGainDbi = vehicularRxGainDbi;
+        SimulationConfig.cellularRxGainDbi = cellularRxGainDbi;
 
         SimulationConfig.minAlpha = minAlphaSlider.value;
         SimulationConfig.maxAlpha = maxAlphaSlider.value;
         SimulationConfig.alphaExponent = alphaExponentSlider.value;
 
         SimulationConfig.performanceMode = (PerformanceSettingsManager.PerformanceMode)performanceModeDropdown.value;
+
+        SimulationConfig.campusVehicleGraphs.prxDistance = campusVehiclePrxDistanceToggle.isOn;
+        SimulationConfig.campusVehicleGraphs.snrDistance = campusVehicleSnrDistanceToggle.isOn;
+        SimulationConfig.campusVehicleGraphs.snrTime = campusVehicleSnrTimeToggle.isOn;
+
+        SimulationConfig.pedestrianGraphs.prxDistance = pedestrianPrxDistanceToggle.isOn;
+        SimulationConfig.pedestrianGraphs.snrDistance = pedestrianSnrDistanceToggle.isOn;
+        SimulationConfig.pedestrianGraphs.snrTime = pedestrianSnrTimeToggle.isOn;
+
+        SimulationConfig.linearVehicleGraphs.prxDistance = linearVehiclePrxDistanceToggle.isOn;
+        SimulationConfig.linearVehicleGraphs.snrDistance = linearVehicleSnrDistanceToggle.isOn;
+        SimulationConfig.linearVehicleGraphs.snrTime = linearVehicleSnrTimeToggle.isOn;
     }
 
+    /// <summary>
+    /// Activates only the requested configuration panel.
+    /// </summary>
     private void ShowOnly(GameObject activePanel)
     {
         mainPanel.SetActive(activePanel == mainPanel);
@@ -299,17 +399,25 @@ public class SimulationConfigMenuController : MonoBehaviour
         antennaPropagationPanel.SetActive(activePanel == antennaPropagationPanel);
         gridAndReceiversPanel.SetActive(activePanel == gridAndReceiversPanel);
         visualizationAndPerformancePanel.SetActive(activePanel == visualizationAndPerformancePanel);
+        resultsAndGraphsPanel.SetActive(activePanel == resultsAndGraphsPanel);
     }
 
+    /// <summary>
+    /// Refreshes all dynamic UI elements after loading values.
+    /// </summary>
     private void RefreshAll()
     {
         RefreshMethodUi();
+        RefreshLossesModelUi();
         RefreshVoxelSizeText();
         RefreshAlphaSliders(false);
         RefreshSliderTexts();
         RefreshVoxelCount();
     }
 
+    /// <summary>
+    /// Shows the method-specific rows for the selected reconstruction method.
+    /// </summary>
     private void RefreshMethodUi()
     {
         // K only affects the Vasiliadis method
@@ -321,11 +429,29 @@ public class SimulationConfigMenuController : MonoBehaviour
         {
             kSliderRow.SetActive(false);
         }
+
+        // Omni maximum gain only affects the Omni method
+        if (omniMaxGainRow != null)
+        {
+            if (methodDropdown.value == 2)
+            {
+                omniMaxGainRow.SetActive(true);
+            }
+            else
+            {
+                omniMaxGainRow.SetActive(false);
+            }
+        }
     }
 
+    /// <summary>
+    /// Shows the NLOS warning when ABG and NLOS are selected.
+    /// </summary>
     private void RefreshEnvironmentUi()
     {
-        if (environmentDropdown.value == 1)
+        bool usesAbg = lossesModelDropdown.value == 0;
+
+        if (usesAbg && environmentDropdown.value == 1)
         {
             nlosAlert.SetActive(true);
         }
@@ -335,12 +461,31 @@ public class SimulationConfigMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Shows scenario and environment rows only for ABG losses.
+    /// </summary>
+    private void RefreshLossesModelUi()
+    {
+        bool usesAbg = lossesModelDropdown.value == 0;
+
+        scenarioRow.SetActive(usesAbg);
+        environmentRow.SetActive(usesAbg);
+
+        RefreshEnvironmentUi();
+    }
+
+    /// <summary>
+    /// Updates the voxel size text from the selected fixed value.
+    /// </summary>
     private void RefreshVoxelSizeText()
     {
         float voxelSize = voxelSizes[currentVoxelSizeIndex];
         voxelSizeValueText.text = FormatFloat(voxelSize, "0.##") + " m";
     }
 
+    /// <summary>
+    /// Keeps min alpha lower than max alpha.
+    /// </summary>
     private void RefreshAlphaSliders(bool changedMinAlpha)
     {
         float minimumGap = 0.01f;
@@ -348,7 +493,7 @@ public class SimulationConfigMenuController : MonoBehaviour
         float minAlpha = Mathf.Clamp01(minAlphaSlider.value);
         float maxAlpha = Mathf.Clamp01(maxAlphaSlider.value);
 
-        // Min alpha must always be lower than max alpha
+        // Keeps min alpha lower than max alpha
         if (minAlpha >= maxAlpha)
         {
             if (changedMinAlpha)
@@ -376,6 +521,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         RefreshSliderTexts();
     }
 
+    /// <summary>
+    /// Updates the visible values next to the sliders.
+    /// </summary>
     private void RefreshSliderTexts()
     {
         kValueText.text = FormatFloat(kSlider.value, "F2");
@@ -384,6 +532,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         alphaExponentValueText.text = FormatFloat(alphaExponentSlider.value, "F2");
     }
 
+    /// <summary>
+    /// Updates the voxel count preview from grid size and voxel size.
+    /// </summary>
     private void RefreshVoxelCount()
     {
         int gridX;
@@ -425,6 +576,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         voxelCountText.text = "Voxel count: " + totalVoxelCount;
     }
 
+    /// <summary>
+    /// Validates every editable input field.
+    /// </summary>
     private bool ValidateAllInputs()
     {
         bool antennaInputsValid = ValidateAntennaPropagationInputs();
@@ -443,18 +597,33 @@ public class SimulationConfigMenuController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Validates decimal fields from the antenna and propagation panel.
+    /// </summary>
     private bool ValidateAntennaPropagationInputs()
     {
         bool allValid = true;
         float value;
 
-        // Tx power can be positive, zero, or negative in dBm
+        // Tx power can be positive, zero or negative in dBm
         bool txPowerValid = TryReadDecimal(txPowerInput, out value);
         SetInputValid(txPowerInput, txPowerValid);
 
         if (!txPowerValid)
         {
             allValid = false;
+        }
+
+        // Omni maximum gain is only required by the Omni method
+        if (methodDropdown.value == 2)
+        {
+            bool omniGainValid = TryReadDecimal(omniMaxGainInput, out value);
+            SetInputValid(omniMaxGainInput, omniGainValid);
+
+            if (!omniGainValid)
+            {
+                allValid = false;
+            }
         }
 
         // Frequency must be greater than zero
@@ -490,6 +659,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         return allValid;
     }
 
+    /// <summary>
+    /// Validates grid integer fields and receiver gain decimal fields.
+    /// </summary>
     private bool ValidateGridAndReceiverInputs()
     {
         bool allValid = true;
@@ -556,17 +728,17 @@ public class SimulationConfigMenuController : MonoBehaviour
             allValid = false;
         }
 
-        // Receiver gains can be positive, zero, or negative in dBi
-        bool carGainValid = TryReadDecimal(carRxGainInput, out gainValue);
-        SetInputValid(carRxGainInput, carGainValid);
+        // Receiver gains can be positive, zero or negative in dBi
+        bool carGainValid = TryReadDecimal(vehicularRxGainInput, out gainValue);
+        SetInputValid(vehicularRxGainInput, carGainValid);
 
         if (!carGainValid)
         {
             allValid = false;
         }
 
-        bool humanGainValid = TryReadDecimal(humanRxGainInput, out gainValue);
-        SetInputValid(humanRxGainInput, humanGainValid);
+        bool humanGainValid = TryReadDecimal(cellularRxGainInput, out gainValue);
+        SetInputValid(cellularRxGainInput, humanGainValid);
 
         if (!humanGainValid)
         {
@@ -576,6 +748,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         return allValid;
     }
 
+    /// <summary>
+    /// Reads an integer input using invariant culture.
+    /// </summary>
     private bool TryReadInteger(TMP_InputField input, out int value)
     {
         value = 0;
@@ -600,6 +775,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Reads a decimal input using dot as decimal separator.
+    /// </summary>
     private bool TryReadDecimal(TMP_InputField input, out float value)
     {
         value = 0f;
@@ -616,7 +794,7 @@ public class SimulationConfigMenuController : MonoBehaviour
             return false;
         }
 
-        // The simulator uses English decimal format, so commas are not valid
+        // The simulator uses English decimal format so commas are not valid
         if (text.Contains(","))
         {
             return false;
@@ -635,6 +813,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Sets the input background color according to validation state.
+    /// </summary>
     private void SetInputValid(TMP_InputField input, bool valid)
     {
         if (input == null)
@@ -659,6 +840,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reads an integer input or returns the default value.
+    /// </summary>
     private int ReadInt(TMP_InputField input, int defaultValue)
     {
         if (input == null)
@@ -676,6 +860,9 @@ public class SimulationConfigMenuController : MonoBehaviour
         return defaultValue;
     }
 
+    /// <summary>
+    /// Finds the fixed voxel size index matching the loaded value.
+    /// </summary>
     private int FindVoxelSizeIndex(float value)
     {
         for (int i = 0; i < voxelSizes.Length; i++)
@@ -689,16 +876,25 @@ public class SimulationConfigMenuController : MonoBehaviour
         return 0;
     }
 
+    /// <summary>
+    /// Formats floats using invariant culture.
+    /// </summary>
     private string FormatFloat(float value, string format)
     {
         return value.ToString(format, CultureInfo.InvariantCulture);
     }
 
+    /// <summary>
+    /// Handles reconstruction method dropdown changes.
+    /// </summary>
     private void OnMethodChanged(int value)
     {
         RefreshMethodUi();
     }
 
+    /// <summary>
+    /// Rounds the K slider value to fixed small steps.
+    /// </summary>
     private void OnKSliderChanged(float value)
     {
         float roundedValue = Mathf.Round(value / 0.05f) * 0.05f;
@@ -711,28 +907,51 @@ public class SimulationConfigMenuController : MonoBehaviour
         RefreshSliderTexts();
     }
 
+    /// <summary>
+    /// Handles min alpha slider changes.
+    /// </summary>
     private void OnMinAlphaSliderChanged(float value)
     {
         RefreshAlphaSliders(true);
     }
 
+    /// <summary>
+    /// Handles max alpha slider changes.
+    /// </summary>
     private void OnMaxAlphaSliderChanged(float value)
     {
         RefreshAlphaSliders(false);
     }
 
+    /// <summary>
+    /// Handles alpha exponent slider changes.
+    /// </summary>
     private void OnAlphaExponentSliderChanged(float value)
     {
         RefreshSliderTexts();
     }
 
+    /// <summary>
+    /// Handles grid input changes.
+    /// </summary>
     private void OnGridInputChanged(string value)
     {
         RefreshVoxelCount();
     }
 
+    /// <summary>
+    /// Handles environment dropdown changes.
+    /// </summary>
     private void OnEnvironmentChanged(int value)
     {
         RefreshEnvironmentUi();
+    }
+
+    /// <summary>
+    /// Handles losses model dropdown changes.
+    /// </summary>
+    private void OnLossesModelChanged(int value)
+    {
+        RefreshLossesModelUi();
     }
 }

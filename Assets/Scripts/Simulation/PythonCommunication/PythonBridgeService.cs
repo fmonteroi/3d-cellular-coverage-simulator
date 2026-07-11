@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -24,27 +24,30 @@ public class PythonBridgeService : MonoBehaviour
     bool isStarted = false;
     readonly object requestLock = new object();
 
+    /// <summary>
+    /// Checks that the Python runtime, bridge script and simulator folder exist.
+    /// </summary>
     public bool ValidateSetup()
     {
         string pythonPath = GetStreamingAssetsPath(pythonExecutablePath);
         string bridgePath = GetStreamingAssetsPath(pythonServerScriptPath);
         string simulatorPath = GetStreamingAssetsPath(simulatorRootPath);
 
-        // Validate python executable
+        // Validates python executable
         if (!File.Exists(pythonPath))
         {
             Debug.LogError($"PythonBridgeService: Python executable not found: {pythonPath}");
             return false;
         }
 
-        // Validate bridge script
+        // Validates bridge script
         if (!File.Exists(bridgePath))
         {
             Debug.LogError($"PythonBridgeService: Python bridge script not found: {bridgePath}");
             return false;
         }
 
-        // Validate simulator root
+        // Validates simulator root
         if (!Directory.Exists(simulatorPath))
         {
             Debug.LogError($"PythonBridgeService: Simulator root not found: {simulatorPath}");
@@ -54,9 +57,12 @@ public class PythonBridgeService : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Starts the Python bridge if it is not already running.
+    /// </summary>
     public void EnsureStarted()
     {
-        // Reuse the running process if possible
+        // Reuses the running process if possible
         if (isStarted && pythonProcess != null && !pythonProcess.HasExited)
         {
             return;
@@ -67,21 +73,24 @@ public class PythonBridgeService : MonoBehaviour
             throw new InvalidOperationException("Python bridge setup is invalid.");
         }
 
-        // Reserve one free local port
+        // Reserves one free local port
         port = GetFreePort();
 
-        // Start the Python bridge
+        // Starts the Python bridge
         StartPythonServer(port);
 
-        // Give Python time to start listening
+        // Gives Python time to start listening
         Thread.Sleep(pythonStartupDelayMs);
 
         isStarted = true;
     }
 
+    /// <summary>
+    /// Sends one request to Python and waits for one JSON response line.
+    /// </summary>
     public BridgeResponseDto SendRequest(BridgeRequestDto request)
     {
-        // Avoid overlapping requests on the same bridge
+        // Avoids overlapping requests on the same bridge
         lock (requestLock)
         {
             EnsureStarted();
@@ -97,12 +106,12 @@ public class PythonBridgeService : MonoBehaviour
                 using (StreamWriter writer = new StreamWriter(stream, new UTF8Encoding(false), 1024, true))
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8, false, 1024, true))
                 {
-                    // Send one JSON line
+                    // Sends one JSON line
                     writer.NewLine = "\n";
                     writer.WriteLine(requestJson);
                     writer.Flush();
 
-                    // Read one JSON response line
+                    // Reads one JSON response line
                     string responseJson = reader.ReadLine();
 
                     if (string.IsNullOrWhiteSpace(responseJson))
@@ -123,9 +132,12 @@ public class PythonBridgeService : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Stops the Python bridge process.
+    /// </summary>
     public void StopBridge()
     {
-        // Nothing to stop if no process exists
+        // Nothing stops when no process exists
         if (pythonProcess == null)
         {
             return;
@@ -135,14 +147,14 @@ public class PythonBridgeService : MonoBehaviour
         {
             try
             {
-                // Ask Python to stop gracefully
+                // Asks Python to stop gracefully
                 BridgeRequestDto shutdownRequest = new BridgeRequestDto();
                 shutdownRequest.requestType = "shutdown";
                 SendRequest(shutdownRequest);
             }
             catch
             {
-                // Fall back to force kill if graceful stop fails
+                // Falls back to force kill if graceful stop fails
             }
 
             if (!pythonProcess.HasExited)
@@ -160,12 +172,18 @@ public class PythonBridgeService : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Stops the bridge when the Unity object is destroyed.
+    /// </summary>
     void OnDestroy()
     {
-        // Stop the bridge when this object is destroyed
+        // Stops the bridge when this object is destroyed
         StopBridge();
     }
 
+    /// <summary>
+    /// Starts the Python TCP server process on the selected port.
+    /// </summary>
     private void StartPythonServer(int selectedPort)
     {
         string pythonPath = GetStreamingAssetsPath(pythonExecutablePath);
@@ -184,10 +202,10 @@ public class PythonBridgeService : MonoBehaviour
             CreateNoWindow = true
         };
 
-        // Redirect Python stdout to Unity logs
+        // Redirects Python stdout to Unity logs
         pythonProcess.OutputDataReceived += OnPythonOutput;
 
-        // Redirect Python stderr to Unity logs
+        // Redirects Python stderr to Unity logs
         pythonProcess.ErrorDataReceived += OnPythonError;
 
         pythonProcess.Start();
@@ -195,24 +213,33 @@ public class PythonBridgeService : MonoBehaviour
         pythonProcess.BeginErrorReadLine();
     }
 
+    /// <summary>
+    /// Sends normal Python output to the Unity console.
+    /// </summary>
     private void OnPythonOutput(object sender, DataReceivedEventArgs e)
     {
-        // Print normal Python logs
+        // Prints normal Python logs
         if (!string.IsNullOrWhiteSpace(e.Data))
         {
             Debug.Log("[Python] " + e.Data);
         }
     }
 
+    /// <summary>
+    /// Sends Python error output to the Unity console.
+    /// </summary>
     private void OnPythonError(object sender, DataReceivedEventArgs e)
     {
-        // Print Python errors
+        // Prints Python errors
         if (!string.IsNullOrWhiteSpace(e.Data))
         {
             Debug.LogError("[Python] " + e.Data);
         }
     }
 
+    /// <summary>
+    /// Reserves and returns one free local TCP port.
+    /// </summary>
     private int GetFreePort()
     {
         TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
@@ -224,9 +251,12 @@ public class PythonBridgeService : MonoBehaviour
         return freePort;
     }
 
+    /// <summary>
+    /// Resolves a path relative to StreamingAssets.
+    /// </summary>
     private string GetStreamingAssetsPath(string relativePath)
     {
-        // Resolve a path relative to StreamingAssets
+        // Resolves a path relative to StreamingAssets
         return Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, relativePath));
     }
 }

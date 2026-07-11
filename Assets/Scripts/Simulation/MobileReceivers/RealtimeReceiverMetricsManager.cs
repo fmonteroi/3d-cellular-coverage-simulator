@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +10,8 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
     [Header("References")]
     public PropagationSettings settings;
     public PythonBridgeService bridgeService;
+    public PropagationGridSimulator gridSimulator;
+    public ReceiverResultsManager resultsManager;
 
     [Header("Receivers")]
     public List<MobileReceiverMetrics> receivers = new List<MobileReceiverMetrics>();
@@ -16,30 +19,113 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
     [Header("Timing")]
     [Min(0.05f)] public float updateIntervalSeconds = 0.2f;
 
-    float nextUpdateTime = 0f;
+    private float nextUpdateTime = 0f;
+    private bool initializationStarted;
+    private bool simulationStarted;
 
+    /// <summary>
+    /// Stops receiver movement and starts the Python bridge before live requests begin.
+    /// </summary>
     void Start()
     {
-        // Start the shared bridge in advance
+
+        // Disables movement of all receivers at the start of the simulation
+        for (int i = 0; i < receivers.Count; i++)
+        {
+            if (receivers[i] == null)
+            {
+                continue;
+            }
+
+            WaypointMover mover = receivers[i].GetComponent<WaypointMover>();
+
+            if (mover != null)
+            {
+                mover.enabled = false;
+            }
+        }
+
+        // Starts the shared bridge in advance
         if (bridgeService != null)
         {
             bridgeService.EnsureStarted();
         }
     }
 
+    /// <summary>
+    /// Starts receiver metrics after the grid is ready and updates them on a fixed interval.
+    /// </summary>
     void Update()
     {
-        // Wait until the next scheduled update
+        // Waits until the grid simulation is ready
+        if (!simulationStarted)
+        {
+            if (!initializationStarted && gridSimulator != null && gridSimulator.ResultsReady)
+            {
+                initializationStarted = true;
+                StartCoroutine(StartMobileSimulation());
+            }
+
+            return;
+        }
+
+        // Waits until the next scheduled request
         if (Time.time < nextUpdateTime)
         {
             return;
         }
 
+        // Schedules the next request
         nextUpdateTime = Time.time + updateIntervalSeconds;
-        RequestMetrics();
+
+        // Requests and records the current metrics
+        RequestMetrics(true);
     }
 
-    private void RequestMetrics()
+    /// <summary>
+    /// Warms up the mobile request path before movement and recording start.
+    /// </summary>
+    private IEnumerator StartMobileSimulation()
+    {
+        // Runs one mobile request without storing its results
+        RequestMetrics(false);
+
+        // Continues during the next frame
+        yield return null;
+
+        // Enables movement after the warm-up request
+        for (int i = 0; i < receivers.Count; i++)
+        {
+            if (receivers[i] == null)
+            {
+                continue;
+            }
+
+            WaypointMover mover =
+                receivers[i].GetComponent<WaypointMover>();
+
+            if (mover != null)
+            {
+                mover.enabled = true;
+            }
+        }
+
+        // Starts storing receiver metrics
+        if (resultsManager != null)
+        {
+            resultsManager.BeginRecording();
+        }
+
+        // Allows the first recorded request immediately
+        nextUpdateTime = Time.time;
+
+        simulationStarted = true;
+    }
+
+    /// <summary>
+    /// Builds and sends one live metrics request for all mobile receivers.
+    /// </summary>
+    private void RequestMetrics(bool recordResults)
     {
         if (settings == null || bridgeService == null)
         {
@@ -71,10 +157,13 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
                 continue;
             }
 
+            // Reads the current receiver position and antenna gain
             Vector3 worldPosition = receiver.GetWorldPosition();
             float txGainDbi = settings.EvaluateTxGainDbi(worldPosition, $"Receiver {receiver.receiverId}");
+
+            // Computes building losses for mobile receivers
             int buildingCollisions = settings.CountBuildingCollisions(worldPosition);
-            float buildingLossDb = buildingCollisions * settings.lossPerBuildingDb;
+            float buildingLossDb = buildingCollisions * settings.GetLossPerWallDb();
 
             MobileReceiverRequestDto receiverRequest = new MobileReceiverRequestDto();
             receiverRequest.id = receiver.receiverId;
@@ -97,10 +186,13 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
             return;
         }
 
-        ApplyReceiverResults(response.receiverResults);
+        ApplyReceiverResults(response.receiverResults, recordResults);
     }
 
-    private void ApplyReceiverResults(List<MobileReceiverResultDto> receiverResults)
+    /// <summary>
+    /// Copies Python receiver results into Unity snapshots and optional result storage.
+    /// </summary>
+    private void ApplyReceiverResults(List<MobileReceiverResultDto> receiverResults, bool recordResults)
     {
         if (receiverResults == null)
         {
@@ -130,12 +222,20 @@ public class RealtimeReceiverMetricsManager : MonoBehaviour
             snapshot.pathLossDb = result.pathLossDb;
             snapshot.prxDbm = result.prxDbm;
             snapshot.snrDb = result.snrDb;
-            snapshot.propagationLatencyMs = result.propagationLatencyMs;
 
             receiver.ApplySnapshot(snapshot);
+
+            // Stores the sample only after the warm-up request
+            if (recordResults && resultsManager != null)
+            {
+                resultsManager.RecordSnapshot(receiver, snapshot);
+            }
         }
     }
 
+    /// <summary>
+    /// Finds a configured receiver by its serialized identifier.
+    /// </summary>
     private MobileReceiverMetrics FindReceiverById(string receiverId)
     {
         for (int i = 0; i < receivers.Count; i++)

@@ -1,3 +1,5 @@
+﻿"""Runs a local TCP bridge between Unity and the original simulator."""
+
 import argparse
 import configparser
 import json
@@ -12,17 +14,23 @@ CACHED_CHANNEL = None
 
 
 def parse_args():
-    """Parse the command line arguments sent by Unity."""
+    """Parses the command line arguments sent by Unity.
+
+    Returns:
+        Parsed arguments with the TCP port and simulator root path.
+    """
     parser = argparse.ArgumentParser(description="Unity to simulator TCP bridge.")
     parser.add_argument("--port", type=int, required=True, help="Local TCP port.")
-    parser.add_argument(
-        "--sim-root", required=True, help="Absolute path to the simulator root."
-    )
+    parser.add_argument("--sim-root", required=True, help="Absolute path to the simulator root.")
     return parser.parse_args()
 
 
 def install_simulator_package(sim_root: str):
-    """Register the simulator root as the SIMULATOR package."""
+    """Registers the simulator root as the SIMULATOR package.
+
+    Args:
+        sim_root: Absolute path to the original simulator root folder.
+    """
     sim_root = os.path.abspath(sim_root)
 
     if "SIMULATOR" in sys.modules:
@@ -38,19 +46,25 @@ def get_model_parameters(
     scenario: str,
     environment_type: str,
     losses_model: str,
-    disable_shadowing: bool,
+    disable_shadowing: bool
 ):
-    """Read the channel parameters from the simulator config files."""
+    """Reads the channel parameters from the simulator config files.
+
+    Args:
+        sim_root: Absolute path to the original simulator root folder.
+        scenario: Propagation scenario selected in Unity.
+        environment_type: Environment type selected in Unity.
+        losses_model: Path loss model selected in Unity.
+        disable_shadowing: True when shadowing must be forced to zero.
+
+    Returns:
+        Dictionary with the model parameters required by the original channel,
+        or None when the selected model does not need a config file.
+    """
     if losses_model == "FSPL":
         return None
 
-    config_path = os.path.join(
-        sim_root,
-        "Configuration",
-        "model_config",
-        "channels",
-        f"SCENARIO_{scenario}_{environment_type}",
-    )
+    config_path = os.path.join(sim_root, "Configuration", "model_config", "channels", f"SCENARIO_{scenario}_{environment_type}")
 
     parser = configparser.ConfigParser()
 
@@ -58,9 +72,7 @@ def get_model_parameters(
         raise FileNotFoundError(f"Channel configuration not found: {config_path}")
 
     if losses_model not in parser:
-        raise ValueError(
-            f"Loss model '{losses_model}' is not configured in {config_path}"
-        )
+        raise ValueError(f"Loss model '{losses_model}' is not configured in {config_path}")
 
     parameters = {"losses_model": losses_model}
 
@@ -75,20 +87,26 @@ def get_model_parameters(
             # Uses the configured shadowing factor
             parameters["shadow_factor"] = parser[losses_model]["shadow_factor"]
     else:
-        raise ValueError(
-            f"Loss model '{losses_model}' is not supported by this bridge."
-        )
+        raise ValueError(f"Loss model '{losses_model}' is not supported by this bridge.")
 
     return parameters
 
 
 def get_channel(request: dict, sim_root: str):
-    """Get the current channel, reusing the last one if possible."""
+    """Gets the current channel, reusing the last one if possible.
+
+    Args:
+        request: Unity request containing scenario, environment and loss model.
+        sim_root: Absolute path to the original simulator root folder.
+
+    Returns:
+        Original simulator Channel instance used for propagation calculations.
+    """
     from SIMULATOR.src.PROPAGATION_CHANNEL.propagation_channel import Channel
 
     global CACHED_CHANNEL
 
-    # Reuse channel if was already created
+    # Reuses the channel if it was already created
     if CACHED_CHANNEL is not None:
         return CACHED_CHANNEL
 
@@ -97,21 +115,19 @@ def get_channel(request: dict, sim_root: str):
         scenario=request["scenario"],
         environment_type=request["environmentType"],
         losses_model=request["lossesModel"],
-        disable_shadowing=request["disableShadowing"],
+        disable_shadowing=request["disableShadowing"]
     )
 
-    config_dir = (
-        os.path.join(sim_root, "Configuration", "model_config", "channels") + os.sep
-    )
+    config_dir = (os.path.join(sim_root, "Configuration", "model_config", "channels") + os.sep)
 
-    # Create the channel only once
+    # Creates the channel only once
     channel = Channel(
         channel_id="CHANNEL_1",
         scenario=request["scenario"],
         environment=request["environmentType"],
         losses_model=request["lossesModel"],
         model_parameters=model_parameters,
-        config_file_path=config_dir,
+        config_file_path=config_dir
     )
 
     CACHED_CHANNEL = channel
@@ -119,7 +135,14 @@ def get_channel(request: dict, sim_root: str):
 
 
 def receive_json_request(connection: socket.socket):
-    """Read one JSON request line from Unity."""
+    """Reads one JSON request line from Unity.
+
+    Args:
+        connection: TCP socket connected to Unity.
+
+    Returns:
+        Request dictionary decoded from UTF-8 JSON.
+    """
     data = bytearray()
 
     while True:
@@ -142,40 +165,69 @@ def receive_json_request(connection: socket.socket):
     return json.loads(data.decode("utf-8"))
 
 
-def send_json_response(connection: socket.socket, payload: dict):
-    """Send one JSON response line to Unity."""
-    message = json.dumps(payload, separators=(",", ":")) + "\n"
+def send_json_response(connection: socket.socket, response: dict):
+    """Sends one JSON response line to Unity.
+
+    Args:
+        connection: TCP socket connected to Unity.
+        response: Response dictionary that will be encoded as JSON.
+    """
+    message = json.dumps(response, separators=(",", ":")) + "\n"
     connection.sendall(message.encode("utf-8"))
 
 
 def build_error_response(error_message: str):
-    """Build a standard error response."""
+    """Builds a standard error response.
+
+    Args:
+        error_message: Error text that Unity will display or log.
+
+    Returns:
+        Response dictionary with empty result lists.
+    """
     return {"error": error_message, "results": [], "receiverResults": []}
 
 
 def build_empty_success_response():
-    """Build an empty success response."""
+    """Builds an empty success response.
+
+    Returns:
+        Response dictionary without errors and without simulation results.
+    """
     return {"error": "", "results": [], "receiverResults": []}
 
 
 def calculate_distance(
     tx_x: float, tx_y: float, tx_z: float, rx_x: float, rx_y: float, rx_z: float
 ):
-    """Calculate the 3D distance between transmitter and receiver."""
+    """Calculates the 3D distance between transmitter and receiver.
+
+    Args:
+        tx_x: Transmitter X position in Unity world meters.
+        tx_y: Transmitter Y position in Unity world meters.
+        tx_z: Transmitter Z position in Unity world meters.
+        rx_x: Receiver X position in Unity world meters.
+        rx_y: Receiver Y position in Unity world meters.
+        rx_z: Receiver Z position in Unity world meters.
+
+    Returns:
+        Distance between transmitter and receiver in meters.
+    """
     dx = rx_x - tx_x
     dy = rx_y - tx_y
     dz = rx_z - tx_z
     return math.sqrt(dx * dx + dy * dy + dz * dz)
 
 
-def calculate_propagation_latency_ms(distance_meters: float):
-    """Calculate propagation latency from the traveled distance."""
-    speed_of_light_mps = 299792458.0
-    return (distance_meters / speed_of_light_mps) * 1000.0
+def read_common_link_data(request: dict):
+    """Extracts the common values shared by all link calculations.
 
+    Args:
+        request: Unity request containing transmitter and propagation values.
 
-def read_common_request_data(request: dict):
-    """Extract the common values shared by all link calculations."""
+    Returns:
+        Dictionary with shared link values using simulator units.
+    """
     return {
         "tx_x": float(request["transmitterX"]),
         "tx_y": float(request["transmitterY"]),
@@ -184,7 +236,7 @@ def read_common_request_data(request: dict):
         "rx_gain_dbi": float(request["rxGainDbi"]),
         "frequency_ghz": float(request["frequencyGHz"]),
         "minimum_distance": max(float(request["minimumDistanceMeters"]), 0.001),
-        "bandwidth_mhz": max(float(request["bandwidthMHz"]), 0.001),
+        "bandwidth_mhz": max(float(request["bandwidthMHz"]), 0.001)
     }
 
 
@@ -196,36 +248,43 @@ def calculate_basic_link_metrics(
     rx_z: float,
     tx_gain_dbi: float,
     building_collisions: int,
-    building_loss_db: float,
+    building_loss_db: float
 ):
-    """Calculate the basic metrics of one transmitter-receiver link."""
+    """Calculates the basic metrics of one transmitter-receiver link.
+
+    Args:
+        channel: Original simulator Channel instance.
+        common_data: Shared link values from read_common_link_data.
+        rx_x: Receiver X position in Unity world meters.
+        rx_y: Receiver Y position in Unity world meters.
+        rx_z: Receiver Z position in Unity world meters.
+        tx_gain_dbi: Transmitter antenna gain for this direction in dBi.
+        building_collisions: Number of building collisions detected by Unity.
+        building_loss_db: Extra propagation loss caused by buildings in dB.
+
+    Returns:
+        Dictionary with distance, path loss, building loss and received power.
+    """
     from SIMULATOR.src.PROPAGATION_CHANNEL.propagation_channel import Channel
 
-    # Compute 3D distance
-    distance = calculate_distance(
-        common_data["tx_x"],
-        common_data["tx_y"],
-        common_data["tx_z"],
-        rx_x,
-        rx_y,
-        rx_z,
-    )
+    # Computes 3D distance
+    distance = calculate_distance(common_data["tx_x"], common_data["tx_y"], common_data["tx_z"], rx_x, rx_y, rx_z)
 
-    # Clamp the minimum valid distance
+    # Clamps the minimum valid distance
     distance = max(distance, common_data["minimum_distance"])
 
-    # Compute base channel loss
+    # Computes base channel loss
     base_path_loss_db = channel.path_loss(distance, common_data["frequency_ghz"])
 
-    # Add extra building loss
+    # Adds extra building loss
     path_loss_db = base_path_loss_db + building_loss_db
 
-    # Compute received power
+    # Computes received power
     prx_dbm = Channel.link_budget(
         tx_power=common_data["tx_power_dbm"],
         tx_gain=tx_gain_dbi,
         rx_gain=common_data["rx_gain_dbi"],
-        path_losses=path_loss_db,
+        path_losses=path_loss_db
     )
 
     return {
@@ -234,7 +293,7 @@ def calculate_basic_link_metrics(
         "distanceMeters": distance,
         "basePathLossDb": base_path_loss_db,
         "pathLossDb": path_loss_db,
-        "prxDbm": prx_dbm,
+        "prxDbm": prx_dbm
     }
 
 
@@ -247,9 +306,24 @@ def calculate_mobile_link_metrics(
     tx_gain_dbi: float,
     building_collisions: int,
     building_loss_db: float,
-    bandwidth_mhz: float,
+    bandwidth_mhz: float
 ):
-    """Calculate the live metrics of one mobile receiver link."""
+    """Calculates the live metrics of one mobile receiver link.
+
+    Args:
+        channel: Original simulator Channel instance.
+        common_data: Shared link values with the receiver gain already applied.
+        rx_x: Receiver X position in Unity world meters.
+        rx_y: Receiver Y position in Unity world meters.
+        rx_z: Receiver Z position in Unity world meters.
+        tx_gain_dbi: Transmitter antenna gain for this direction in dBi.
+        building_collisions: Number of building collisions detected by Unity.
+        building_loss_db: Extra propagation loss caused by buildings in dB.
+        bandwidth_mhz: Channel bandwidth used by the SNR calculation in MHz.
+
+    Returns:
+        Dictionary with basic link metrics plus SNR in dB.
+    """
     basic_metrics = calculate_basic_link_metrics(
         channel=channel,
         common_data=common_data,
@@ -258,36 +332,38 @@ def calculate_mobile_link_metrics(
         rx_z=rx_z,
         tx_gain_dbi=tx_gain_dbi,
         building_collisions=building_collisions,
-        building_loss_db=building_loss_db,
+        building_loss_db=building_loss_db
     )
 
     from SIMULATOR.src.PROPAGATION_CHANNEL.propagation_channel import Channel
     import SIMULATOR.src.MATH_UTILS.formulas as f
 
-    # Compute propagation latency
-    propagation_latency_ms = calculate_propagation_latency_ms(
-        basic_metrics["distanceMeters"]
-    )
-
-    # Convert received power from dBm to mW
+    # Converts received power from dBm to mW
     rx_power_mw = f.to_units(basic_metrics["prxDbm"])
 
-    # Compute SNR as SINR without external interference
+    # Computes SNR as SINR without external interference
     snr_db = Channel.sinr(
         rx_power=rx_power_mw,
         bandwidth=bandwidth_mhz,
-        interferences=0.0,
+        interferences=0.0
     )
 
-    basic_metrics["propagationLatencyMs"] = propagation_latency_ms
     basic_metrics["snrDb"] = snr_db
     return basic_metrics
 
 
 def simulate_grid(request: dict, sim_root: str):
-    """Calculate metrics for all grid voxels."""
+    """Calculates metrics for all grid voxels.
+
+    Args:
+        request: Unity grid request containing voxel positions and gains.
+        sim_root: Absolute path to the original simulator root folder.
+
+    Returns:
+        Response dictionary with one result entry per voxel.
+    """
     channel = get_channel(request, sim_root)
-    common_data = read_common_request_data(request)
+    common_data = read_common_link_data(request)
 
     results = []
 
@@ -300,7 +376,7 @@ def simulate_grid(request: dict, sim_root: str):
             rx_z=float(voxel["z"]),
             tx_gain_dbi=float(voxel["txGainDbi"]),
             building_collisions=int(voxel.get("buildingCollisions", 0)),
-            building_loss_db=float(voxel.get("buildingLossDb", 0.0)),
+            building_loss_db=float(voxel.get("buildingLossDb", 0.0))
         )
 
         results.append(
@@ -310,7 +386,7 @@ def simulate_grid(request: dict, sim_root: str):
                 "buildingLossDb": metrics["buildingLossDb"],
                 "distanceMeters": metrics["distanceMeters"],
                 "pathLossDb": metrics["pathLossDb"],
-                "prxDbm": metrics["prxDbm"],
+                "prxDbm": metrics["prxDbm"]
             }
         )
 
@@ -318,29 +394,37 @@ def simulate_grid(request: dict, sim_root: str):
 
 
 def simulate_mobile_receivers(request: dict, sim_root: str):
-    """Calculate live metrics for all mobile receivers."""
+    """Calculates live metrics for all mobile receivers.
+
+    Args:
+        request: Unity request containing all mobile receiver positions.
+        sim_root: Absolute path to the original simulator root folder.
+
+    Returns:
+        Response dictionary with one result entry per mobile receiver.
+    """
     channel = get_channel(request, sim_root)
-    common_data = read_common_request_data(request)
+    common_data = read_common_link_data(request)
 
     receiver_results = []
 
     for receiver in request["receivers"]:
-        # For mobile receivers, includes rx gain
-        receiver_common_data = common_data.copy()
-        receiver_common_data["rx_gain_dbi"] = float(
+        # Adds the specific receiver gain for mobile receivers
+        receiver_link_data = common_data.copy()
+        receiver_link_data["rx_gain_dbi"] = float(
             receiver.get("rxGainDbi", common_data["rx_gain_dbi"])
         )
 
         metrics = calculate_mobile_link_metrics(
             channel=channel,
-            common_data=receiver_common_data,
+            common_data=receiver_link_data,
             rx_x=float(receiver["x"]),
             rx_y=float(receiver["y"]),
             rx_z=float(receiver["z"]),
             tx_gain_dbi=float(receiver["txGainDbi"]),
             building_collisions=int(receiver.get("buildingCollisions", 0)),
             building_loss_db=float(receiver.get("buildingLossDb", 0.0)),
-            bandwidth_mhz=common_data["bandwidth_mhz"],
+            bandwidth_mhz=common_data["bandwidth_mhz"]
         )
 
         receiver_results.append(
@@ -353,8 +437,7 @@ def simulate_mobile_receivers(request: dict, sim_root: str):
                 "basePathLossDb": metrics["basePathLossDb"],
                 "pathLossDb": metrics["pathLossDb"],
                 "prxDbm": metrics["prxDbm"],
-                "snrDb": metrics["snrDb"],
-                "propagationLatencyMs": metrics["propagationLatencyMs"],
+                "snrDb": metrics["snrDb"]
             }
         )
 
@@ -362,7 +445,15 @@ def simulate_mobile_receivers(request: dict, sim_root: str):
 
 
 def process_request(request: dict, sim_root: str):
-    """Route the request to the correct simulation path."""
+    """Routes the request to the correct simulation path.
+
+    Args:
+        request: Unity request containing the requestType field.
+        sim_root: Absolute path to the original simulator root folder.
+
+    Returns:
+        Tuple with the response dictionary and the shutdown flag.
+    """
     request_type = request.get("requestType", "grid")
 
     if request_type == "shutdown":
@@ -378,15 +469,19 @@ def process_request(request: dict, sim_root: str):
 
 
 def main():
-    """Run a persistent local TCP bridge."""
+    """Runs a persistent local TCP bridge.
+
+    The server listens on localhost, receives one JSON request per connection,
+    sends one JSON response, and stops only when Unity sends shutdown.
+    """
     args = parse_args()
 
-    # Register the simulator package once
+    # Registers the simulator package once
     install_simulator_package(args.sim_root)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         # Configures the TCP server
-        # Allows to reuse the same port immediately after restarting the bridge
+        # Allows reusing the same port immediately after restarting the bridge
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(("127.0.0.1", args.port))
         server.listen(8)

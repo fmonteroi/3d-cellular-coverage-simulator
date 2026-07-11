@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -13,6 +13,9 @@ public class PatternViewLegend : MonoBehaviour
     public TMP_Text maxGainText;
     public TMP_Text minGainText;
 
+    /// <summary>
+    /// Updates the legend when the scene starts.
+    /// </summary>
     void Start()
     {
         UpdateLegend();
@@ -23,7 +26,7 @@ public class PatternViewLegend : MonoBehaviour
     /// </summary>
     private void UpdateLegend()
     {
-        // Use the singleton if no reconstructor was assigned
+        // Uses the singleton if no reconstructor was assigned
         if (reconstructor == null)
         {
             reconstructor = PatternGainReconstructor.Instance;
@@ -40,7 +43,7 @@ public class PatternViewLegend : MonoBehaviour
         float minGainDbi = float.PositiveInfinity;
         float maxGainDbi = float.NegativeInfinity;
 
-        // Find the complete gain range represented by the pattern
+        // Finds the complete gain range represented by the pattern
         for (int theta = 0; theta < gainMatrix.GetLength(0); theta++)
         {
             for (int phi = 0; phi < gainMatrix.GetLength(1); phi++)
@@ -50,6 +53,12 @@ public class PatternViewLegend : MonoBehaviour
                 minGainDbi = Mathf.Min(minGainDbi, gainDbi);
                 maxGainDbi = Mathf.Max(maxGainDbi, gainDbi);
             }
+        }
+
+        // Omni colors use a fixed visual range so the legend matches the pattern mesh
+        if (reconstructor.method == PatternGainReconstructor.ReconstructionMethod.Omni)
+        {
+            minGainDbi = maxGainDbi - 50f;
         }
 
         if (maxGainText != null)

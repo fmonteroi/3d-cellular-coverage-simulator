@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -8,6 +8,9 @@ public class WaypointPath : MonoBehaviour
 {
     public List<Transform> points = new List<Transform>();
 
+    /// <summary>
+    /// Draws the waypoint path in the scene view.
+    /// </summary>
     void OnDrawGizmos()
     {
         if (points == null || points.Count < 2)

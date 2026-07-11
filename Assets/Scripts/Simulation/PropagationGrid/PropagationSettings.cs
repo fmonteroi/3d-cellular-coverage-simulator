@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// Stores the shared propagation settings.
+/// Stores shared propagation settings and evaluates antenna gain and building losses.
 /// </summary>
 public class PropagationSettings : MonoBehaviour
 {
@@ -41,7 +41,7 @@ public class PropagationSettings : MonoBehaviour
     public float txPowerDbm = 30f;
     public float rxGainDbi = 0f;
     public float frequencyGHz = 1.785f;
-    [Min(0.001f)] public float minimumDistanceMeters = 1f;
+    [Min(0.001f)] public float minimumDistanceMeters = 0.001f;
     [Min(0.001f)] public float bandwidthMHz = 10f;
 
 
@@ -54,28 +54,30 @@ public class PropagationSettings : MonoBehaviour
 
     [Header("Building losses")]
     public LayerMask buildingLayerMask;
-    [Min(0f)] public float lossPerBuildingDb = 3f;
 
     [Header("Debug")]
     public bool showDebug = false;
 
+    /// <summary>
+    /// Checks that the references required for propagation calculations are ready.
+    /// </summary>
     public bool ValidateSetup()
     {
-        // Validate transmitter reference
+        // Checks the transmitter reference
         if (transmitter == null)
         {
             Debug.LogError("PropagationSettings: Transmitter is not assigned.");
             return false;
         }
 
-        // Validate gain reconstruction reference
+        // Checks the gain reconstructor reference
         if (patternReconstructor == null)
         {
             Debug.LogError("PropagationSettings: PatternGainReconstructor is not assigned.");
             return false;
         }
 
-        // Validate gain matrix availability
+        // Checks that the gain matrix is ready
         if (!patternReconstructor.IsReady)
         {
             Debug.LogError("PropagationSettings: PatternGainReconstructor is not ready.");
@@ -92,19 +94,22 @@ public class PropagationSettings : MonoBehaviour
             LogTest(180, 0, "-18.30 dBi");
             LogTest(0, 0, "-15.45 dBi");
 
-            // El de la reunion (0,185) matlab
+            // Test angle used during the Matlab comparison
             LogTest(0, 185, "-35.62 dBi");
         }
 
         return true;
     }
 
+    /// <summary>
+    /// Calculates the transmitter antenna gain towards a receiver world position.
+    /// </summary>
     public float EvaluateTxGainDbi(Vector3 rxWorldPosition, string debugLabel = "")
     {
-        // Direction from transmiter to receiver
+        // Gets the direction from the transmitter to the receiver
         Vector3 worldDirection = rxWorldPosition - transmitter.position;
 
-        // If the receiver is exactly at the transmitter position, return the max gain
+        // Returns the maximum gain when both positions are equal
         if (worldDirection.sqrMagnitude <= 0.001f)
         {
             return patternReconstructor.MaxGainDbi;
@@ -113,70 +118,198 @@ public class PropagationSettings : MonoBehaviour
         // Converts the direction to local antenna coordinates
         Vector3 localDirection = transmitter.InverseTransformDirection(worldDirection.normalized).normalized;
 
-        // Gets theta from the local direction
+        // Calculates theta from the local direction
         int theta = Mathf.RoundToInt(Mathf.Acos(Mathf.Clamp(localDirection.y, -1f, 1f)) * Mathf.Rad2Deg);
 
-        // Gets phi from the local direction
+        // Calculates phi from the local direction
         int phi = Mathf.RoundToInt(Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg);
         if (phi < 0)
         {
             phi += 360;
         }
 
-        // Read the absolute gain from the matrix
+        // Reads the absolute gain from the matrix
         float gainDbi = patternReconstructor.GetGainDbi(theta, phi);
 
-        // Debug if enabled
+        // Prints the calculated angles and gain when debug is enabled
         if (showDebug)
         {
             Debug.Log($"{debugLabel} Theta={theta} Phi={phi} Gain={gainDbi} dBi");
         }
 
-
-        // Read the absolute gain from the matrix
         return gainDbi;
     }
 
-
-
+    /// <summary>
+    /// Counts the building wall crossings between the transmitter and one receiver position.
+    /// </summary>
     public int CountBuildingCollisions(Vector3 rxWorldPosition)
     {
-        // If no building layer is selected, no building loss is applied
+        // Skips collision checks when no building layer is selected
         if (buildingLayerMask.value == 0)
         {
             return 0;
         }
 
-        // Direction from transmiter to receiver
-        Vector3 worldDirection = rxWorldPosition - transmitter.position;
+        // Builds the segment from the transmitter to the receiver
+        Vector3 startPosition = transmitter.position;
+        Vector3 worldDirection = rxWorldPosition - startPosition;
 
-        // If the receiver is exactly at the transmitter position, return zero buildings
+        // Skips an empty segment
         if (worldDirection.sqrMagnitude <= 0.001f)
         {
             return 0;
         }
 
-        // Cast along the TX -> RX direction and collect all crossed building colliders
-        RaycastHit[] hits = Physics.RaycastAll(
-            transmitter.position,
-            worldDirection.normalized,
-            worldDirection.magnitude,
-            buildingLayerMask,
-            QueryTriggerInteraction.Ignore);
+        float segmentLength = worldDirection.magnitude;
+        Vector3 direction = worldDirection.normalized;
 
-        // Count unique colliders to avoid duplicated hits
-        HashSet<Collider> crossedBuildings = new HashSet<Collider>();
+        // Finds every building piece crossed by the segment
+        RaycastHit[] hits = Physics.RaycastAll(
+            startPosition,
+            direction,
+            segmentLength,
+            buildingLayerMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        // Stores processed colliders and their occupied intervals
+        HashSet<Collider> checkedColliders = new HashSet<Collider>();
+        List<Vector2> intervals = new List<Vector2>();
 
         for (int i = 0; i < hits.Length; i++)
         {
-            crossedBuildings.Add(hits[i].collider);
+            Collider currentCollider = hits[i].collider;
+
+            // Processes each collider only once
+            if (checkedColliders.Contains(currentCollider))
+            {
+                continue;
+            }
+
+            checkedColliders.Add(currentCollider);
+
+            AddColliderInterval(currentCollider, startPosition, rxWorldPosition, direction, segmentLength, intervals);
         }
 
-        return crossedBuildings.Count;
+        // Merges connected pieces and counts the crossed walls
+        return CountWallCrossings(intervals, segmentLength);
     }
 
+    /// <summary>
+    /// Adds the occupied interval of one collider along the transmitter receiver segment.
+    /// </summary>
+    private void AddColliderInterval(Collider buildingCollider, Vector3 startPosition, Vector3 endPosition, Vector3 direction, float segmentLength, List<Vector2> intervals)
+    {
+        // Casts from both ends to find the entry and exit points
+        Ray forwardRay = new Ray(startPosition, direction);
+        Ray backwardRay = new Ray(endPosition, -direction);
+
+        RaycastHit entryHit;
+        RaycastHit exitHit;
+
+        bool foundEntry = buildingCollider.Raycast(forwardRay, out entryHit, segmentLength);
+        bool foundExit = buildingCollider.Raycast(backwardRay, out exitHit, segmentLength);
+
+        // Requires the forward ray to find the collider
+        if (!foundEntry)
+        {
+            return;
+        }
+
+        float entryDistance = entryHit.distance;
+        float exitDistance;
+
+        if (foundExit)
+        {
+            // Converts the exit distance to use the transmitter as origin
+            exitDistance = segmentLength - exitHit.distance;
+        }
+        else
+        {
+            // The backward ray starts inside the collider
+            // The occupied interval finishes at the receiver
+            exitDistance = segmentLength;
+        }
+
+        // Keeps the interval ordered from start to end
+        if (entryDistance > exitDistance)
+        {
+            float temporary = entryDistance;
+            entryDistance = exitDistance;
+            exitDistance = temporary;
+        }
+
+        const float minimumThickness = 0.01f;
+
+        // Ignores contacts that only touch an edge or corner
+        if (exitDistance - entryDistance <= minimumThickness)
+        {
+            return;
+        }
+
+        // Stores entry in x and exit in y
+        intervals.Add(new Vector2(entryDistance, exitDistance));
+    }
+
+    /// <summary>
+    /// Merges collider intervals and converts continuous sections into wall crossings.
+    /// </summary>
+    private int CountWallCrossings(List<Vector2> intervals, float segmentLength)
+    {
+        // No intervals means no crossed walls
+        if (intervals.Count == 0)
+        {
+            return 0;
+        }
+
+        // Sorts intervals by their entry distance
+        intervals.Sort(
+            delegate (Vector2 first, Vector2 second)
+            {
+                return first.x.CompareTo(second.x);
+            }
+        );
+
+        const float tolerance = 0.01f;
+
+        int continuousSections = 1;
+        float currentEnd = intervals[0].y;
+
+        for (int i = 1; i < intervals.Count; i++)
+        {
+            Vector2 nextInterval = intervals[i];
+
+            // Merges intervals that overlap or touch
+            if (nextInterval.x <= currentEnd + tolerance)
+            {
+                currentEnd = Mathf.Max(currentEnd, nextInterval.y);
+            }
+            else
+            {
+                continuousSections++;
+                currentEnd = nextInterval.y;
+            }
+        }
+
+        // Counts one entry and one exit wall per continuous section
+        int wallCrossings = continuousSections * 2;
+
+        // Removes the exit wall when the receiver finishes inside
+        if (currentEnd >= segmentLength - tolerance)
+        {
+            wallCrossings--;
+        }
+
+        return wallCrossings;
+    }
+
+    /// <summary>
+    /// Builds the common bridge request fields from the current propagation settings.
+    /// </summary>
     public BridgeRequestDto BuildBaseRequest()
     {
+        // Copies the shared settings into the bridge request
         return new BridgeRequestDto
         {
             scenario = scenario.ToString(),
@@ -194,6 +327,9 @@ public class PropagationSettings : MonoBehaviour
         };
     }
 
+    /// <summary>
+    /// Prints one gain comparison value used during pattern debugging.
+    /// </summary>
     private void LogTest(int theta, int phi, string expected)
     {
         float relativeDb = patternReconstructor.GetGainDbRelative(theta, phi);
@@ -203,5 +339,13 @@ public class PropagationSettings : MonoBehaviour
             $"Angle (theta={theta} phi={phi}) " +
             $"relative={relativeDb:F2} dB absolute={absoluteDbi:F2} dBi | Matlab expected: {expected}"
         );
+    }
+
+    /// <summary>
+    /// Gets the fixed additional loss applied per crossed wall.
+    /// </summary>
+    public float GetLossPerWallDb()
+    {
+        return 5f + 4f * frequencyGHz;
     }
 }

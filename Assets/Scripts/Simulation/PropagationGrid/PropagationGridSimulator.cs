@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
@@ -20,6 +20,7 @@ public class PropagationGridSimulator : MonoBehaviour
     public PythonBridgeService bridgeService;
     public Transform receiversParent;
     public PrxVoxelChunkRenderer voxelRenderer;
+    public ThresholdSlider thresholdSlider;
     public SimulationLoadingPanel loadingPanel;
 
     [Header("Grid")]
@@ -37,38 +38,41 @@ public class PropagationGridSimulator : MonoBehaviour
     // Generated voxel data
     public List<VoxelData> voxelsData;
 
+    /// <summary>
+    /// Runs the grid simulation sequence and shows loading messages between heavy steps.
+    /// </summary>
     private IEnumerator Start()
     {
         ResultsReady = false;
 
-        // Validate loading panel
+        // Validates loading panel
         if (loadingPanel == null)
         {
             yield break;
         }
 
-        // Validate shared settings
+        // Validates shared settings
         if (settings == null || !settings.ValidateSetup())
         {
             loadingPanel.Show("Simulation setup error");
             yield break;
         }
 
-        // Validate bridge service
+        // Validates bridge service
         if (bridgeService == null || !bridgeService.ValidateSetup())
         {
             loadingPanel.Show("Simulation setup error");
             yield break;
         }
 
-        // Validate renderer
+        // Validates renderer
         if (voxelRenderer == null)
         {
             loadingPanel.Show("Simulation setup error");
             yield break;
         }
 
-        // Ensure parent object exists
+        // Ensures parent object exists
         EnsureParentExists();
 
         // Builds all voxel positions and prepares the request sent to Python
@@ -76,13 +80,13 @@ public class PropagationGridSimulator : MonoBehaviour
         yield return null;
         BridgeRequestDto request = BuildGridRequest();
 
-        // Let Unity update the loading message before calling Python
+        // Lets Unity update the loading message before calling Python
         BridgeResponseDto response;
         loadingPanel.Show("Computing metrics...");
         yield return null;
         try
         {
-            // Send the grid request through the shared bridge
+            // Sends the grid request through the shared bridge
             response = bridgeService.SendRequest(request);
         }
         catch (Exception ex)
@@ -99,20 +103,24 @@ public class PropagationGridSimulator : MonoBehaviour
             yield break;
         }
 
-        // Copy the returned values into voxel data.
+        // Copies the returned values into voxel data
         ApplyResponse(response);
-
-        ResultsReady = true;
         Debug.Log("PropagationGridSimulator: voxel grid simulation finished.");
 
-        // Let Unity update the loading message before creating the visible voxels.
+        // Lets Unity update the loading message before creating the visible voxels
         loadingPanel.Show("Drawing voxels...");
         yield return null;
 
         try
         {
-            // Builds the renderer chunks with the new voxel data.
+            // Builds the renderer chunks with the new voxel data
             voxelRenderer.BuildChunks();
+
+            // Refreshes the threshold label after the Prx range has been calculated
+            if (thresholdSlider != null)
+            {
+                thresholdSlider.RefreshText();
+            }
         }
         catch (Exception ex)
         {
@@ -121,10 +129,15 @@ public class PropagationGridSimulator : MonoBehaviour
             yield break;
         }
 
-        // Hide the loading panel when the simulation is ready.
+        // Hides the loading panel when the simulation is ready
+        ResultsReady = true;
         loadingPanel.Hide();
+        Debug.Log("PropagationGridSimulator: simulation ready.");
     }
 
+    /// <summary>
+    /// Clamps grid size values edited in the Inspector.
+    /// </summary>
     void OnValidate()
     {
         gridSizeMeters.x = Mathf.Clamp(gridSizeMeters.x, 1, 500);
@@ -132,6 +145,9 @@ public class PropagationGridSimulator : MonoBehaviour
         gridSizeMeters.z = Mathf.Clamp(gridSizeMeters.z, 1, 500);
     }
 
+    /// <summary>
+    /// Calculates how many voxels fit in each grid axis.
+    /// </summary>
     private Vector3Int GetVoxelCount()
     {
         return new Vector3Int(
@@ -141,9 +157,12 @@ public class PropagationGridSimulator : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Creates the receiver parent object if none was assigned.
+    /// </summary>
     private void EnsureParentExists()
     {
-        // If parent already assigned, it returns
+        // Returns when a parent is already assigned
         if (receiversParent != null)
         {
             return;
@@ -159,6 +178,9 @@ public class PropagationGridSimulator : MonoBehaviour
     // Grid generation
     // --------------------------------------------------
 
+    /// <summary>
+    /// Builds the voxel list and the grid request sent to Python.
+    /// </summary>
     private BridgeRequestDto BuildGridRequest()
     {
         // Calculates the number of voxels in each dimension
@@ -188,7 +210,7 @@ public class PropagationGridSimulator : MonoBehaviour
             {
                 for (int x = 0; x < voxelCount.x; x++)
                 {
-                    // Center of the current voxel
+                    // Calculates the center of the current voxel
                     Vector3 localCenter = localGridOrigin + new Vector3((x + 0.5f) * voxelSizeMeters, (y + 0.5f) * voxelSizeMeters, (z + 0.5f) * voxelSizeMeters);
 
                     // Converts the local voxel center to world coordinates using transmitter rotation
@@ -204,10 +226,10 @@ public class PropagationGridSimulator : MonoBehaviour
                     if (includeBuildingCollisions)
                     {
                         buildingCollisions = settings.CountBuildingCollisions(center);
-                        buildingLossDb = buildingCollisions * settings.lossPerBuildingDb;
+                        buildingLossDb = buildingCollisions * settings.GetLossPerWallDb();
                     }
 
-                    // Store voxel data
+                    // Stores voxel data
                     VoxelData sample = new VoxelData();
                     sample.index = index;
                     sample.gridX = x;
@@ -219,7 +241,7 @@ public class PropagationGridSimulator : MonoBehaviour
                     sample.txGainDbi = txGainDbi;
                     sample.rxGainDbi = settings.rxGainDbi;
 
-                    // Adds the voxeldata to the list
+                    // Adds the voxel data to the list
                     voxelsData.Add(sample);
 
                     // Creates debug object if a prefab is assigned
@@ -250,6 +272,9 @@ public class PropagationGridSimulator : MonoBehaviour
         return request;
     }
 
+    /// <summary>
+    /// Gets the minimum grid corner in transmitter local coordinates.
+    /// </summary>
     private Vector3 GetLocalGridOrigin()
     {
         // Computes the total grid size in meters
@@ -259,6 +284,9 @@ public class PropagationGridSimulator : MonoBehaviour
         return -(gridWorldSize * 0.5f);
     }
 
+    /// <summary>
+    /// Creates a debug receiver object for one voxel.
+    /// </summary>
     private GameObject CreateReceiverObject(int x, int y, int z, Vector3 center)
     {
         // Instantiates the debug prefab if available
@@ -269,24 +297,26 @@ public class PropagationGridSimulator : MonoBehaviour
             return receiverObject;
         }
 
-        // Otherwise create an empty object
+        // Creates an empty object when no prefab is assigned
         GameObject emptyReceiver = new GameObject($"Rx_{x}_{y}_{z}");
         emptyReceiver.transform.SetParent(receiversParent, false);
         emptyReceiver.transform.position = center;
         return emptyReceiver;
     }
 
-
+    /// <summary>
+    /// Copies Python grid results into the matching voxel data entries.
+    /// </summary>
     private void ApplyResponse(BridgeResponseDto response)
     {
-        // Validate response list
+        // Validates response list
         if (response.results == null)
         {
             Debug.LogError("PropagationGridSimulator: Response has no results array.");
             return;
         }
 
-        // Copy each result into the matching voxel data
+        // Copies each result into the matching voxel data
         for (int i = 0; i < response.results.Count; i++)
         {
             VoxelResultDto result = response.results[i];
@@ -297,7 +327,7 @@ public class PropagationGridSimulator : MonoBehaviour
                 continue;
             }
 
-            // Copy Python results into voxel data
+            // Copies Python results into voxel data
             VoxelData sample = voxelsData[result.index];
             sample.distanceMeters = result.distanceMeters;
             sample.pathLossDb = result.pathLossDb;

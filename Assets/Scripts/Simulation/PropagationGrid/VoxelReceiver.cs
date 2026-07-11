@@ -1,7 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
-/// Links a debug object to one voxel data.
+/// Links a debug object to one voxel data entry.
 /// </summary>
 [DisallowMultipleComponent]
 public class VoxelReceiver : MonoBehaviour

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -27,33 +27,41 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
     public float MaxPrx { get; private set; }
     public bool HasPrxRange { get; private set; }
 
+    /// <summary>
+    /// Finds the grid simulator if it was not assigned manually.
+    /// </summary>
     void Start()
     {
-        // Find the simulator automatically if it was not assigned
+        // Finds the simulator automatically if it was not assigned
         if (simulator == null)
         {
             simulator = FindFirstObjectByType<PropagationGridSimulator>();
         }
     }
 
+    /// <summary>
+    /// Rebuilds all visible voxel chunks from the simulator data.
+    /// </summary>
     public void BuildChunks()
     {
-        // Remove previous chunk objects
+        // Removes previous chunk objects
         ClearChunks();
 
-        // Guard clauses
+        // Stops when the simulator is missing
         if (simulator == null)
         {
             Debug.LogError("PrxVoxelChunkRenderer: Simulator not assigned.");
             return;
         }
 
+        // Stops when the material is missing
         if (voxelMaterial == null)
         {
             Debug.LogError("PrxVoxelChunkRenderer: Voxel material not assigned.");
             return;
         }
 
+        // Stops when there is no voxel data
         if (simulator.voxelsData == null || simulator.voxelsData.Count == 0)
         {
             Debug.LogWarning("PrxVoxelChunkRenderer: No voxel data available.");
@@ -65,7 +73,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         MaxPrx = float.NegativeInfinity;
         HasPrxRange = false;
 
-        // Loops through all voxels to find the min and max Prx values
+        // Searches all voxels to find the min and max Prx values
         for (int i = 0; i < simulator.voxelsData.Count; i++)
         {
             float value = simulator.voxelsData[i].prxDbm;
@@ -86,7 +94,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         // Groups voxels by chunk
         Dictionary<Vector3Int, List<VoxelData>> chunks = new Dictionary<Vector3Int, List<VoxelData>>();
 
-        // Loops through all voxels
+        // Iterates through all voxels
         List<VoxelData> voxels = simulator.voxelsData;
         for (int i = 0; i < voxels.Count; i++)
         {
@@ -99,14 +107,14 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
                 sample.gridY / chunkSize,
                 sample.gridZ / chunkSize);
 
-            // Variable to store the voxel list of the current chunk
+            // Stores the voxel list of the current chunk
             List<VoxelData> chunkVoxelsList = null;
 
-            // If the chunk already exists, gets its list
+            // Gets the existing chunk list when available
             if (chunks.ContainsKey(chunkCoord))
             {
                 chunkVoxelsList = chunks[chunkCoord];
-            } // Otherwise, creates a new voxel list for this chunk
+            } // Creates a new voxel list for this chunk otherwise
             else
             {
                 chunkVoxelsList = new List<VoxelData>();
@@ -117,7 +125,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
             chunkVoxelsList.Add(sample);
         }
 
-        // Create one mesh object per chunk
+        // Creates one mesh object per chunk
         foreach (Vector3Int chunkCoord in chunks.Keys)
         {
             List<VoxelData> chunkVoxelsList = chunks[chunkCoord];
@@ -127,6 +135,9 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         Debug.Log($"PrxVoxelChunkRenderer: Built {chunkObjects.Count} chunk objects.");
     }
 
+    /// <summary>
+    /// Creates one chunk object and assigns its generated mesh.
+    /// </summary>
     private void CreateChunkObject(Vector3Int chunkCoord, List<VoxelData> chunkVoxelsList, float minPrx, float maxPrx)
     {
         // Builds the mesh of the chunk from its voxel list
@@ -135,7 +146,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         // Creates one GameObject to render the chunk
         GameObject chunkObject = new GameObject($"VoxelChunk_{chunkCoord.x}_{chunkCoord.y}_{chunkCoord.z}");
 
-        // Sets the same layer as the owner of this script so it can be rendered by the same cameras
+        // Sets the same layer as the owner so it can be rendered by the same cameras
         chunkObject.layer = gameObject.layer;
 
         // Parents the chunk object to the owner of this script
@@ -148,14 +159,14 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         // Assigns the generated mesh to the MeshFilter
         meshFilter.sharedMesh = mesh;
 
-        // Assign the voxel material to the MeshRenderer
+        // Assigns the voxel material to the MeshRenderer
         meshRenderer.sharedMaterial = voxelMaterial;
 
-        // Disable shadows because it's not a lit material
+        // Disables shadows because this is a visualization material
         meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
         meshRenderer.receiveShadows = false;
 
-        // Disable light probes so they don't try to light the material
+        // Disables probes so they do not affect the visualization material
         meshRenderer.lightProbeUsage = LightProbeUsage.Off;
         meshRenderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
 
@@ -163,6 +174,9 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         chunkObjects.Add(chunkObject);
     }
 
+    /// <summary>
+    /// Builds a mesh containing all visible voxels of one chunk.
+    /// </summary>
     private Mesh BuildChunkMesh(List<VoxelData> samples, float minPrx, float maxPrx)
     {
         float normalizedPrx;
@@ -195,7 +209,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
 
         // 2 - Define the 8 basic corner positions of a cube
 
-        // Half size of the voxel, used to place corners around the center
+        // Half size of the voxel used to place corners around the center
         float half = simulator.voxelSizeMeters * 0.5f;
 
         // Local cube corners
@@ -226,7 +240,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
             new int[] { 0, 1, 5, 4 }  // Bottom
         };
 
-        // Offsets to keep track of where we are in the final mesh arrays
+        // Offsets that track positions inside the final mesh arrays
         int vertexOffset = 0;
         int triangleOffset = 0;
 
@@ -243,10 +257,10 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
             // Normalizes Prx
             normalizedPrx = Normalize(sample.prxDbm, minPrx, maxPrx);
 
-            // Encode Prx as heat color + alpha
+            // Encodes Prx as heat color plus alpha
             Color cubeColor = EvaluateHeatColor(normalizedPrx);
 
-            // Loops through the 6 faces of the cube
+            // Iterates through the 6 faces of the cube
             for (int face = 0; face < 6; face++)
             {
                 // First vertex index of this face
@@ -281,11 +295,11 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
             vertexOffset += 24;
         }
 
-        // 8 - Create the Unity mesh from the generated vertices, colors, and triangle indices.
+        // 8 - Create the Unity mesh from the generated vertices, colors, and triangle indices
         Mesh mesh = new Mesh();
         mesh.name = "PrxVoxelChunkMesh";
 
-        // Uses 32-bit indices if we exceed the 65535 vertex limit of 16-bit indices
+        // Uses 32-bit indices if the mesh exceeds the 65535 vertex limit
         mesh.indexFormat = IndexFormat.UInt32;
         mesh.vertices = vertices;
         mesh.colors = colors;
@@ -299,6 +313,9 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         return mesh;
     }
 
+    /// <summary>
+    /// Normalizes one value between the selected minimum and maximum range.
+    /// </summary>
     private float Normalize(float value, float minValue, float maxValue)
     {
         float range = maxValue - minValue;
@@ -311,6 +328,9 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         return Mathf.Clamp01((value - minValue) / range);
     }
 
+    /// <summary>
+    /// Deletes all generated chunk objects.
+    /// </summary>
     private void ClearChunks()
     {
         for (int i = 0; i < chunkObjects.Count; i++)
@@ -324,6 +344,9 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         chunkObjects.Clear();
     }
 
+    /// <summary>
+    /// Converts normalized received power into voxel color and alpha.
+    /// </summary>
     private Color EvaluateHeatColor(float normalizedPrx)
     {
         normalizedPrx = Mathf.Clamp01(normalizedPrx);
@@ -335,6 +358,9 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         return color;
     }
 
+    /// <summary>
+    /// Changes the visible Prx threshold and rebuilds the chunks.
+    /// </summary>
     public void SetVisibilityThreshold(float threshold)
     {
         visibilityThreshold = Mathf.Clamp01(threshold);

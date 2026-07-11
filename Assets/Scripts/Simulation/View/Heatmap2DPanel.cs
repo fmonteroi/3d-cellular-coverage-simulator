@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
@@ -255,7 +255,7 @@ public class Heatmap2DPanel : MonoBehaviour
             float normalizedPrx = Normalize(voxel.prxDbm, minPrx, maxPrx);
             Color color = EvaluateHeatColor(normalizedPrx);
 
-            // Paint the voxel using its rotated footprint on the 2D map.
+            // Paints the voxel using its rotated footprint on the 2D map
             PaintRotatedVoxel(voxel.centerWorldPosition, color);
         }
 
@@ -278,18 +278,18 @@ public class Heatmap2DPanel : MonoBehaviour
 
     /// <summary>
     /// Paints one voxel on the heatmap using the real grid rotation.
-    /// The voxel is converted into four rotated corners, then the smallest pixel area
-    /// that covers those corners is filled. This avoids empty pixels when the grid is rotated.
+    /// The voxel is converted into four rotated corners, then the smallest pixel area.
+    /// that covers those corners is filled to avoid empty pixels when the grid is rotated.
     /// </summary>
     private void PaintRotatedVoxel(Vector3 centerWorldPosition, Color color)
     {
-        // Half of the voxel size is used to build the four local floor corners.
+        // Uses half of the voxel size to build the four local floor corners
         float half = simulator.voxelSizeMeters * 0.5f;
 
-        // The grid uses the same rotation as the transmitter.
+        // Uses the same rotation as the transmitter
         Quaternion rotation = simulator.settings.transmitter.rotation;
 
-        // Convert the four rotated voxel corners from world space to heatmap pixels.
+        // Converts the four rotated voxel corners from world space to heatmap pixels
         Vector2[] corners = new Vector2[]
         {
         WorldToHeatmapPixelFloat(centerWorldPosition + rotation * new Vector3(-half, 0f, -half)),
@@ -298,19 +298,19 @@ public class Heatmap2DPanel : MonoBehaviour
         WorldToHeatmapPixelFloat(centerWorldPosition + rotation * new Vector3(-half, 0f,  half)),
         };
 
-        // Find the pixel rectangle that contains the rotated voxel footprint.
+        // Finds the pixel rectangle that contains the rotated voxel footprint
         float minXf = Mathf.Min(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
         float maxXf = Mathf.Max(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
         float minYf = Mathf.Min(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
         float maxYf = Mathf.Max(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
 
-        // Floor and Ceil include border pixels so small rounding errors do not create gaps.
+        // Floor and Ceil include border pixels so small rounding errors do not create gaps
         int minX = Mathf.Clamp(Mathf.FloorToInt(minXf), 0, heatmapTexture.width - 1);
         int maxX = Mathf.Clamp(Mathf.CeilToInt(maxXf), 0, heatmapTexture.width - 1);
         int minY = Mathf.Clamp(Mathf.FloorToInt(minYf), 0, heatmapTexture.height - 1);
         int maxY = Mathf.Clamp(Mathf.CeilToInt(maxYf), 0, heatmapTexture.height - 1);
 
-        // Fill the selected pixel area with the voxel color.
+        // Fills the selected pixel area with the voxel color
         for (int y = minY; y <= maxY; y++)
         {
             for (int x = minX; x <= maxX; x++)
@@ -321,7 +321,7 @@ public class Heatmap2DPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Converts normalized Prx into a semi-transparent yellow-to-red color.
+    /// Converts normalized Prx into a semi-transparent yellow to red color.
     /// </summary>
     private Color EvaluateHeatColor(float normalizedPrx)
     {
@@ -335,11 +335,11 @@ public class Heatmap2DPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// Normalizes a value between a minimum and maximum into the 0..1 range.
+    /// Normalizes a value between a minimum and maximum into the zero to one range.
     /// </summary>
     private float Normalize(float value, float minValue, float maxValue)
     {
-        // Convert value to the 0..1 range
+        // Converts value to the zero to one range
         float range = maxValue - minValue;
 
         if (range <= 0.001f)
@@ -398,25 +398,25 @@ public class Heatmap2DPanel : MonoBehaviour
     /// </summary>
     private Vector2 WorldToHeatmapPixelFloat(Vector3 worldPosition)
     {
-        // The map bounds define the world area represented by the 2D heatmap.
+        // Uses the map bounds as the world area represented by the 2D heatmap
         Vector3 min = mapMinPoint.position;
         Vector3 max = mapMaxPoint.position;
 
-        // The minimap is centered between both bounds.
+        // Centers the minimap between both bounds
         Vector3 center = (min + max) * 0.5f;
 
-        // Use the real visible area calculated from the camera/render texture aspect ratio.
+        // Uses the real visible area calculated from the camera and render texture aspect ratio
         float minVisibleX = center.x - visibleWidthMeters * 0.5f;
         float maxVisibleX = center.x + visibleWidthMeters * 0.5f;
 
         float minVisibleZ = center.z - visibleDepthMeters * 0.5f;
         float maxVisibleZ = center.z + visibleDepthMeters * 0.5f;
 
-        // Convert world X/Z coordinates into normalized 0..1 map coordinates.
+        // Converts world X/Z coordinates into normalized zero to one map coordinates
         float normalizedX = Mathf.InverseLerp(minVisibleX, maxVisibleX, worldPosition.x);
         float normalizedZ = Mathf.InverseLerp(minVisibleZ, maxVisibleZ, worldPosition.z);
 
-        // Convert normalized map coordinates into texture pixel coordinates.
+        // Converts normalized map coordinates into texture pixel coordinates
         float pixelX = normalizedX * (heatmapTexture.width - 1);
         float pixelY = normalizedZ * (heatmapTexture.height - 1);
 
@@ -561,7 +561,7 @@ public class Heatmap2DPanel : MonoBehaviour
 
     /// <summary>
     /// Places the antenna marker on both the small heatmap and the expanded heatmap.
-    /// The antenna is only a point on the map, so it does not need the voxel rotation logic.
+    /// The antenna is only a point on the map so it does not need the voxel rotation logic.
     /// </summary>
     private void UpdateAntennaMapMarkers()
     {
@@ -570,10 +570,10 @@ public class Heatmap2DPanel : MonoBehaviour
             return;
         }
 
-        // Convert the transmitter world position to a heatmap pixel position.
+        // Converts the transmitter world position to a heatmap pixel position
         Vector2 antennaPixel = WorldToHeatmapPixelFloat(simulator.settings.transmitter.position);
 
-        // UI anchors use normalized 0..1 coordinates, not raw pixels.
+        // UI anchors use normalized zero to one coordinates instead of raw pixels
         float normalizedX = antennaPixel.x / (float)(heatmapTexture.width - 1);
 
         float normalizedY = antennaPixel.y / (float)(heatmapTexture.height - 1);

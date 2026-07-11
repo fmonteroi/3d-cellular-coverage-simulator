@@ -48,30 +48,39 @@ public class SimulationViewManager : MonoBehaviour
 
     private int currentViewIndex = 0;
 
+    /// <summary>
+    /// Applies the initial simulation view.
+    /// </summary>
     void Start()
     {
-        // Initialize the view to heatmap view at the start
+        // Initializes the view to heatmap view at the start
         ApplyView();
     }
 
+    /// <summary>
+    /// Handles view input and updates the camera every frame.
+    /// </summary>
     void Update()
     {
-        // Handles user input for switching views and update the camera position and orientation
+        // Handles user input for switching views and camera updates
         HandleInput();
 
         // Smoothly moves the camera towards the active target
         UpdateCamera();
     }
 
+    /// <summary>
+    /// Reads keyboard input for view switching.
+    /// </summary>
     private void HandleInput()
     {
-        // Do not switch views while the simulation is paused
+        // Does not switch views while the simulation is paused
         if (Time.timeScale == 0f)
         {
             return;
         }
 
-        // Do not switch views while the expanded heatmap is open
+        // Does not switch views while the expanded heatmap is open
         if (heatmap2DPanel != null && heatmap2DPanel.IsExpandedViewOpen)
         {
             return;
@@ -98,6 +107,9 @@ public class SimulationViewManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Selects the next heatmap, pattern or receiver view.
+    /// </summary>
     private void MoveToNextView()
     {
         currentViewIndex++;
@@ -112,6 +124,9 @@ public class SimulationViewManager : MonoBehaviour
         ApplyView();
     }
 
+    /// <summary>
+    /// Selects the previous heatmap, pattern or receiver view.
+    /// </summary>
     private void MoveToPreviousView()
     {
         currentViewIndex--;
@@ -126,6 +141,9 @@ public class SimulationViewManager : MonoBehaviour
         ApplyView();
     }
 
+    /// <summary>
+    /// Applies the active view to UI panels and visible scene objects.
+    /// </summary>
     private void ApplyView()
     {
 
@@ -208,6 +226,9 @@ public class SimulationViewManager : MonoBehaviour
         SetSceneViewObjects(showVoxels: false, showPattern: false);
     }
 
+    /// <summary>
+    /// Smoothly moves and rotates the camera towards the current view target.
+    /// </summary>
     private void UpdateCamera()
     {
         // No camera movement is possible without a target camera
@@ -216,36 +237,39 @@ public class SimulationViewManager : MonoBehaviour
             return;
         }
 
-        // Resolve the desired camera position and look point for the current view
-        if (!TreyGetViewTarget(out Vector3 desiredPosition, out Vector3 desiredLookPosition))
+        // Resolves the desired camera position and look point for the current view
+        if (!TryGetViewTarget(out Vector3 desiredPosition, out Vector3 desiredLookPosition))
         {
             return;
         }
 
-        // Smoothly move the camera towards the desired position
+        // Smoothly moves the camera towards the desired position
         targetCamera.transform.position = Vector3.Lerp(
             targetCamera.transform.position,
             desiredPosition,
-            cameraMoveSpeed * Time.deltaTime
+            cameraMoveSpeed * Time.unscaledDeltaTime
         );
 
-        // Build the desired rotation so the camera looks at the active target
+        // Builds the desired rotation so the camera looks at the active target
         Quaternion targetRotation = Quaternion.LookRotation(
             desiredLookPosition - targetCamera.transform.position,
             Vector3.up
         );
 
-        // Smoothly rotate the camera towards the desired orientation
+        // Smoothly rotates the camera towards the desired orientation
         targetCamera.transform.rotation = Quaternion.Slerp(
             targetCamera.transform.rotation,
             targetRotation,
-            cameraLookSpeed * Time.deltaTime
+            cameraLookSpeed * Time.unscaledDeltaTime
         );
     }
 
-    private bool TreyGetViewTarget(out Vector3 desiredPosition, out Vector3 desiredLookPosition)
+    /// <summary>
+    /// Gets the desired camera transform for the current view.
+    /// </summary>
+    private bool TryGetViewTarget(out Vector3 desiredPosition, out Vector3 desiredLookPosition)
     {
-        // Initialize out parameters with safe defaults
+        // Initializes out parameters with safe defaults
         desiredPosition = Vector3.zero;
         desiredLookPosition = Vector3.zero;
 
@@ -275,12 +299,15 @@ public class SimulationViewManager : MonoBehaviour
             return false;
         }
 
-        // Read the camera follow position and look point from the receiver
+        // Reads the camera follow position and look point from the receiver
         desiredPosition = viewTarget.GetCameraPosition();
         desiredLookPosition = viewTarget.GetLookPosition();
         return true;
     }
 
+    /// <summary>
+    /// Calculates an orbital camera position from one view anchor and its sliders.
+    /// </summary>
     private bool TryCalculateCameraTransform(Transform cameraPoint, Transform lookPoint, Slider zoomSlider, Slider rotationSlider,
                                         Slider elevationSlider, out Vector3 desiredPosition, out Vector3 desiredLookPosition)
     {
@@ -310,7 +337,7 @@ public class SimulationViewManager : MonoBehaviour
             zoomMultiplier = zoomSlider.maxValue + zoomSlider.minValue - zoomSlider.value;
         }
 
-        // Read the horizontal rotation
+        // Reads the horizontal rotation
         float horizontalDegrees = 0f;
 
         if (rotationSlider != null)
@@ -322,7 +349,7 @@ public class SimulationViewManager : MonoBehaviour
 
         Vector3 horizontalDirection = horizontalRotation * originalDirection.normalized;
 
-        // Read the vertical rotation
+        // Reads the vertical rotation
         float elevationDegrees = 0f;
 
         if (elevationSlider != null)
@@ -344,12 +371,15 @@ public class SimulationViewManager : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// Gets the receiver selected by the current view index.
+    /// </summary>
     private MobileReceiverMetrics GetCurrentReceiver()
     {
-        // Convert the view index into the receiver list index
+        // Converts the view index into the receiver list index
         int receiverIndex = currentViewIndex - 2;
 
-        // Guard against invalid indices
+        // Guards against invalid indices
         if (receiverIndex < 0 || receiverIndex >= receivers.Count)
         {
             return null;
@@ -359,6 +389,9 @@ public class SimulationViewManager : MonoBehaviour
         return receivers[receiverIndex];
     }
 
+    /// <summary>
+    /// Toggles the heatmap and antenna pattern scene objects.
+    /// </summary>
     private void SetSceneViewObjects(bool showVoxels, bool showPattern)
     {
         if (prxVoxelRenderer != null)
@@ -372,16 +405,25 @@ public class SimulationViewManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Returns true when the active view is the 3D heatmap.
+    /// </summary>
     private bool IsHeatmapView()
     {
         return currentViewIndex == 0;
     }
 
+    /// <summary>
+    /// Returns true when the active view is the antenna pattern.
+    /// </summary>
     private bool IsPatternView()
     {
         return currentViewIndex == 1;
     }
 
+    /// <summary>
+    /// Returns true when the active view follows one receiver.
+    /// </summary>
     private bool IsReceiverView()
     {
         return currentViewIndex >= 2;

@@ -5,13 +5,13 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 
 /// <summary>
-/// Singleton that reads an input CSV from StreamingAssets, reconstructs a 3D gain matrix,
-/// and keeps the result available for other scripts.
+/// Singleton that reads an input CSV from StreamingAssets.
+/// It reconstructs a 3D gain matrix and keeps the result available for other scripts.
 /// 
-/// Matrix:
-///   [theta, phi]
-///   theta = 0..180
-///   phi   = 0..359
+/// Matrix.
+///   [theta, phi].
+///   theta = 0 to 180.
+///   phi   = 0 to 359.
 /// </summary>
 [DefaultExecutionOrder(-1000)] // Runs the first
 public class PatternGainReconstructor : MonoBehaviour
@@ -38,12 +38,9 @@ public class PatternGainReconstructor : MonoBehaviour
     [Range(0.5f, 10f)] public float k = 2f;
 
     [Header("Omni")]
-    [Range(0.1f, 8f)] public float omniPowerP = 1f;
+    [Range(0.1f, 8f)] public float omniPowerP = 2f;
     [Range(0f, 0.5f)] public float omniFloor = 0f;
-
-    // --------------------------------------------------
-    // Internal state
-    // --------------------------------------------------
+    public float omniMaxGainDbi = 0f;
 
     // Singleton instance
     public static PatternGainReconstructor Instance { get; private set; }
@@ -80,6 +77,9 @@ public class PatternGainReconstructor : MonoBehaviour
     private float gainMaxDbi = 0f;
     private bool hasGain = false;
 
+    /// <summary>
+    /// Initializes the singleton instance and computes the first gain matrix.
+    /// </summary>
     void Awake()
     {
         // Singleton pattern
@@ -94,6 +94,9 @@ public class PatternGainReconstructor : MonoBehaviour
         Compute();
     }
 
+    /// <summary>
+    /// Recomputes the gain matrix when Inspector values change during play mode.
+    /// </summary>
     void OnValidate()
     {
         if (!Application.isPlaying)
@@ -164,9 +167,57 @@ public class PatternGainReconstructor : MonoBehaviour
         return GainDbiMatrix[ClampTheta(thetaDeg), Wrap360(phiDeg)];
     }
 
+    /// <summary>
+    /// Exports the reconstructed absolute gain matrix to a tab separated CSV file.
+    /// </summary>
+    public void ExportGainDbiMatrixCsv(string outputPath)
+    {
+        EnsureReady();
+
+        using (StreamWriter writer = new StreamWriter(outputPath))
+        {
+            // Writes metadata using the same header style as the input pattern file
+            writer.WriteLine("FILENAME\t" + fileName);
+            writer.WriteLine("METHOD\t" + method);
+
+            if (method == ReconstructionMethod.Vasiliadis2005)
+            {
+                writer.WriteLine("K_FACTOR\t" + k.ToString("F2", CultureInfo.InvariantCulture));
+            }
+
+            if (method == ReconstructionMethod.Omni)
+            {
+                writer.WriteLine("OMNI_MAX_GAIN_DBI\t" + omniMaxGainDbi.ToString("F6", CultureInfo.InvariantCulture));
+                writer.WriteLine("OMNI_POWER_P\t" + omniPowerP.ToString("F6", CultureInfo.InvariantCulture));
+                writer.WriteLine("OMNI_FLOOR\t" + omniFloor.ToString("F6", CultureInfo.InvariantCulture));
+            }
+
+            writer.WriteLine("THETA_COUNT\t" + GainDbiMatrix.GetLength(0));
+            writer.WriteLine("PHI_COUNT\t" + GainDbiMatrix.GetLength(1));
+            writer.WriteLine("UNITS\tdBi");
+            writer.WriteLine("THETA\tPHI\tGAIN");
+
+            // Writes one row per reconstructed direction
+            for (int theta = 0; theta < GainDbiMatrix.GetLength(0); theta++)
+            {
+                for (int phi = 0; phi < GainDbiMatrix.GetLength(1); phi++)
+                {
+                    writer.WriteLine(
+                        theta.ToString("F2", CultureInfo.InvariantCulture) + "\t" +
+                        phi.ToString("F2", CultureInfo.InvariantCulture) + "\t" +
+                        GainDbiMatrix[theta, phi].ToString("F6", CultureInfo.InvariantCulture)
+                    );
+                }
+            }
+        }
+    }
+
     // --------------------------------------------------
     // Prepare data from CSV
     // --------------------------------------------------
+    /// <summary>
+    /// Loads horizontal and vertical slices from the MSI like CSV file.
+    /// </summary>
     private bool LoadMsiLikeCsv()
     {
         string path = Path.Combine(Application.streamingAssetsPath, fileName);
@@ -256,7 +307,7 @@ public class PatternGainReconstructor : MonoBehaviour
             }
 
 
-            // Maps angle to 0..359 index
+            // Maps angle to the 0 to 359 index range
             int a = Wrap360(Mathf.RoundToInt(angleDeg));
 
             if (readingH)
@@ -303,6 +354,9 @@ public class PatternGainReconstructor : MonoBehaviour
     // --------------------------------------------------
     // Build matrices
     // --------------------------------------------------
+    /// <summary>
+    /// Builds the linear, relative dB and absolute dBi gain matrices.
+    /// </summary>
     private void BuildGainMatrices()
     {
         GainLinearMatrix = new float[181, 360];
@@ -337,6 +391,9 @@ public class PatternGainReconstructor : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Builds a simple omnidirectional gain matrix.
+    /// </summary>
     private void BuildOmniMatrices()
     {
         GainLinearMatrix = new float[181, 360];
@@ -364,7 +421,8 @@ public class PatternGainReconstructor : MonoBehaviour
             {
                 GainLinearMatrix[theta, phi] = gLin;
                 GainDbRelativeMatrix[theta, phi] = gDbRel;
-                GainDbiMatrix[theta, phi] = gDbRel;
+                // Adds the configured maximum gain to convert relative dB into dBi
+                GainDbiMatrix[theta, phi] = omniMaxGainDbi + gDbRel;
             }
         }
     }
@@ -372,6 +430,9 @@ public class PatternGainReconstructor : MonoBehaviour
     // --------------------------------------------------
     // Reconstruction methods
     // --------------------------------------------------
+    /// <summary>
+    /// Selects the active reconstruction method for one direction.
+    /// </summary>
     private float EvaluateDirection(int thetaDeg, int phiDeg)
     {
         switch (method)
@@ -388,6 +449,9 @@ public class PatternGainReconstructor : MonoBehaviour
     // --------------------------------------------------
     // GIL 2001
     // --------------------------------------------------
+    /// <summary>
+    /// Calculates one direction using the Gil reconstruction method.
+    /// </summary>
     private float CalculateGainByGil(int thetaDeg, int phiDeg)
     {
 
@@ -494,6 +558,9 @@ public class PatternGainReconstructor : MonoBehaviour
     // --------------------------------------------------
     // VASILIADIS 2005
     // --------------------------------------------------
+    /// <summary>
+    /// Calculates one direction using the Vasiliadis reconstruction method.
+    /// </summary>
     private float CalculateGainByVasiliadis(int thetaDeg, int phiDeg)
     {
         // 1 - Sample normalized values
@@ -534,27 +601,31 @@ public class PatternGainReconstructor : MonoBehaviour
     // HELPERS
     // --------------------------------------------------
 
-    // Returns the smallest value in an array
+    /// <summary>
+    /// Returns the smallest value in an array.
+    /// </summary>
     private static float MinArray(float[] arr)
     {
-        // Start with a very large value
+        // Starts with a very large value
         float m = float.PositiveInfinity;
 
-        // Check all elements
+        // Checks all elements
         for (int i = 0; i < arr.Length; i++)
             m = Mathf.Min(m, arr[i]);
 
         return m;
     }
 
-    // Returns the index of the smallest value in an array
+    /// <summary>
+    /// Returns the index of the smallest value in an array.
+    /// </summary>
     private static int ArgMin(float[] arr)
     {
-        // Start assuming the first valid minimum
+        // Starts assuming the first valid minimum
         int idx = 0;
         float best = float.PositiveInfinity;
 
-        // Search for the smallest value
+        // Searches for the smallest value
         for (int i = 0; i < arr.Length; i++)
         {
             if (arr[i] < best)
@@ -567,24 +638,28 @@ public class PatternGainReconstructor : MonoBehaviour
         return idx;
     }
 
-    // Copies an array into another one with a circular shift
+    /// <summary>
+    /// Copies an array into another one with a circular shift.
+    /// </summary>
     private static void CircularShiftInto(float[] src, float[] dst, int shift)
     {
         int n = src.Length;
 
         for (int i = 0; i < n; i++)
         {
-            // Compute shifted position
+            // Computes shifted position
             int j = (i + shift) % n;
 
-            // Fix negative positions
+            // Fixes negative positions
             if (j < 0) j += n;
 
             dst[j] = src[i];
         }
     }
 
-    // Wraps an angle to the 0..359 range
+    /// <summary>
+    /// Wraps an angle to the 0 to 359 range.
+    /// </summary>
     private static int Wrap360(int deg)
     {
         deg = deg % 360;
@@ -598,28 +673,36 @@ public class PatternGainReconstructor : MonoBehaviour
         return deg;
     }
 
-    // Clamps theta to the valid 0..180 range
+    /// <summary>
+    /// Clamps theta to the valid 0 to 180 range.
+    /// </summary>
     private static int ClampTheta(int deg)
     {
         return Mathf.Clamp(deg, 0, 180);
     }
 
-    // Tries to convert text into a float
+    /// <summary>
+    /// Tries to parse a float using invariant culture.
+    /// </summary>
     private static bool TryParseFloat(string s, out float value)
     {
-        // Remove spaces and replace comma with dot
+        // Removes spaces and replaces comma with dot
         s = s.Trim().Replace(",", ".");
 
         return float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
     }
 
-    // Checks if a line starts with a given word
+    /// <summary>
+    /// Checks whether a line starts with a token.
+    /// </summary>
     private static bool StartsWithToken(string line, string token)
     {
         return line.StartsWith(token, StringComparison.OrdinalIgnoreCase);
     }
 
-    // Finds the first number inside a line of text
+    /// <summary>
+    /// Extracts the first float found inside a line.
+    /// </summary>
     private static bool TryExtractFirstFloatFromLine(string line, out float value)
     {
         Match m = Regex.Match(line, @"[-+]?\d+(?:[.,]\d+)?");
@@ -633,7 +716,9 @@ public class PatternGainReconstructor : MonoBehaviour
         return TryParseFloat(m.Value, out value);
     }
 
-    // Throws an error if the matrices are not ready yet
+    /// <summary>
+    /// Throws an exception if the reconstructed matrices are not ready.
+    /// </summary>
     private void EnsureReady()
     {
         if (!IsReady || GainLinearMatrix == null || GainDbRelativeMatrix == null || GainDbiMatrix == null)

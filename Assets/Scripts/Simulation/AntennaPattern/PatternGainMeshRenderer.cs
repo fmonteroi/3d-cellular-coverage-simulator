@@ -3,10 +3,10 @@ using UnityEngine;
 /// <summary>
 /// Builds a 3D mesh from reconstructed gain data.
 /// 
-/// Matrix:
-///   [theta, phi]
-///   theta = 0..180
-///   phi   = 0..359
+/// Matrix.
+///   [theta, phi].
+///   theta = 0 to 180.
+///   phi   = 0 to 359.
 /// </summary>
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
@@ -25,6 +25,9 @@ public class PatternGainMeshRenderer : MonoBehaviour
 
     Mesh mesh;
 
+    /// <summary>
+    /// Uses the singleton reconstructor when no source was assigned.
+    /// </summary>
     void Awake()
     {
         // If the reconstructor is not assigned, uses the singleton instance
@@ -34,11 +37,17 @@ public class PatternGainMeshRenderer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Builds the initial antenna pattern mesh.
+    /// </summary>
     void Start()
     {
         BuildMesh();
     }
 
+    /// <summary>
+    /// Rebuilds the mesh when Inspector values change during play mode.
+    /// </summary>
     void OnValidate()
     {
         if (!Application.isPlaying)
@@ -49,6 +58,9 @@ public class PatternGainMeshRenderer : MonoBehaviour
         BuildMesh();
     }
 
+    /// <summary>
+    /// Clears the generated mesh when the renderer is disabled.
+    /// </summary>
     void OnDisable()
     {
         MeshFilter mf = GetComponent<MeshFilter>();
@@ -82,35 +94,64 @@ public class PatternGainMeshRenderer : MonoBehaviour
             return;
         }
 
-        // Gets the selected matrix
-        float[,] values = reconstructor.GainDbiMatrix;
+        // Gets the matrix used for geometry radius
+        float[,] radiusValues = reconstructor.GainDbiMatrix;
 
-        int thetaCount = values.GetLength(0);
-        int phiCount = values.GetLength(1);
+        if (reconstructor.method == PatternGainReconstructor.ReconstructionMethod.Omni)
+        {
+            radiusValues = reconstructor.GainLinearMatrix;
+        }
 
-        // Initializes min and max values for normalization
-        float minValue = float.PositiveInfinity;
-        float maxValue = float.NegativeInfinity;
+        // Keeps colors based on dBi values
+        float[,] colorValues = reconstructor.GainDbiMatrix;
+
+        int thetaCount = radiusValues.GetLength(0);
+        int phiCount = radiusValues.GetLength(1);
+
+        // Initializes min and max values for radius normalization
+        float minRadiusValue = float.PositiveInfinity;
+        float maxRadiusValue = float.NegativeInfinity;
+
+        // Initializes min and max values for color normalization
+        float minColorValue = float.PositiveInfinity;
+        float maxColorValue = float.NegativeInfinity;
 
         for (int t = 0; t < thetaCount; t++)
         {
             for (int p = 0; p < phiCount; p++)
             {
-                float value = values[t, p];
+                float radiusValue = radiusValues[t, p];
+                float colorValue = colorValues[t, p];
 
-                if (value < minValue)
+                if (radiusValue < minRadiusValue)
                 {
-                    minValue = value;
+                    minRadiusValue = radiusValue;
                 }
 
-                if (value > maxValue)
+                if (radiusValue > maxRadiusValue)
                 {
-                    maxValue = value;
+                    maxRadiusValue = radiusValue;
+                }
+
+                if (colorValue < minColorValue)
+                {
+                    minColorValue = colorValue;
+                }
+
+                if (colorValue > maxColorValue)
+                {
+                    maxColorValue = colorValue;
                 }
             }
         }
 
-        // Create mesh arrays
+        // Omni color uses a fixed visual range so nulls do not dominate the gradient
+        if (reconstructor.method == PatternGainReconstructor.ReconstructionMethod.Omni)
+        {
+            minColorValue = maxColorValue - 50f;
+        }
+
+        // Creates mesh arrays
         int vertexCount = thetaCount * phiCount;
         int quadCount = (thetaCount - 1) * phiCount;
 
@@ -118,7 +159,7 @@ public class PatternGainMeshRenderer : MonoBehaviour
         Color[] colors = new Color[vertexCount];
         int[] triangles = new int[quadCount * 6];
 
-        // Build all vertices and colors
+        // Builds all vertices and colors
         for (int t = 0; t < thetaCount; t++)
         {
             // Convert theta from degrees to radians
@@ -131,14 +172,15 @@ public class PatternGainMeshRenderer : MonoBehaviour
                 // Convert phi from degrees to radians
                 float phiRad = (p + 90f) * Mathf.Deg2Rad;
 
-                // Get vertex index
+                // Gets vertex index
                 int index = t * phiCount + p;
 
-                // Get value for this direction
-                float value = values[t, p];
+                // Gets radius and color values for this direction
+                float radiusValue = radiusValues[t, p];
+                float colorValue = colorValues[t, p];
 
-                // Convert value into radius
-                float radius = EvaluateRadius(value, minValue, maxValue);
+                // Converts value into radius
+                float radius = EvaluateRadius(radiusValue, minRadiusValue, maxRadiusValue);
 
                 // Convert spherical coordinates to Cartesian coordinates
                 float x = radius * sinTheta * Mathf.Cos(phiRad);
@@ -147,8 +189,8 @@ public class PatternGainMeshRenderer : MonoBehaviour
 
                 vertices[index] = new Vector3(x, y, z);
 
-                // Normalizes the value to 0..1 for color encoding
-                float normalized = Normalize01(value, minValue, maxValue);
+                // Normalizes the value to the zero to one range for color encoding
+                float normalized = Normalize01(colorValue, minColorValue, maxColorValue);
 
                 // Stores data in vertex colors:
                 // r = normalized gain
@@ -162,7 +204,7 @@ public class PatternGainMeshRenderer : MonoBehaviour
             }
         }
 
-        // Build triangle indices
+        // Builds triangle indices
         int tri = 0;
 
         for (int t = 0; t < thetaCount - 1; t++)
@@ -190,7 +232,7 @@ public class PatternGainMeshRenderer : MonoBehaviour
             }
         }
 
-        // Create or clear mesh
+        // Creates or clears mesh
         if (mesh == null)
         {
             mesh = new Mesh();
@@ -234,7 +276,7 @@ public class PatternGainMeshRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Normalizes a value to the 0..1 range.
+    /// Normalizes a value to the zero to one range.
     /// </summary>
     private float Normalize01(float value, float minValue, float maxValue)
     {

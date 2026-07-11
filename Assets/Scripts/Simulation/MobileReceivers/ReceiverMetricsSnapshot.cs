@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 /// <summary>
-/// Stores metrics of a mobile receiver.
+/// Stores one timestamped metric sample for a mobile receiver.
 /// </summary>
 [Serializable]
 public class ReceiverMetricsSnapshot
@@ -22,5 +22,4 @@ public class ReceiverMetricsSnapshot
     public float pathLossDb;
     public float prxDbm;
     public float snrDb;
-    public float propagationLatencyMs;
 }

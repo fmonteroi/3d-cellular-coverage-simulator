@@ -2,8 +2,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// Handles common simulation UI actions such as pause and return to menu.
+/// </summary>
 public class SimulationUiControls : MonoBehaviour
 {
+    [Header("References")]
+    public ReceiverResultsManager resultsManager;
+
     [Header("Scenes")]
     public string mainMenuSceneName = "MainMenu";
 
@@ -14,12 +20,25 @@ public class SimulationUiControls : MonoBehaviour
 
     private bool isPaused = false;
 
+    /// <summary>
+    /// Exports pending results and loads the main menu scene.
+    /// </summary>
     public void BackToMainMenu()
     {
+        // Saves partial receiver results before leaving the simulation
+        if (resultsManager != null)
+        {
+            resultsManager.ExportPending();
+        }
+
+        // Restores normal time before changing scene
         Time.timeScale = 1f;
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
+    /// <summary>
+    /// Toggles the simulation pause state and updates the pause button icon.
+    /// </summary>
     public void TogglePause()
     {
         isPaused = !isPaused;

@@ -1,6 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Applies performance modes by enabling or disabling optional scene groups.
+/// </summary>
 public class PerformanceSettingsManager : MonoBehaviour
 {
     public enum PerformanceMode
@@ -23,6 +26,9 @@ public class PerformanceSettingsManager : MonoBehaviour
     public GameObject park;
     public GameObject background;
 
+    /// <summary>
+    /// Registers toggle callbacks and applies the default mode.
+    /// </summary>
     void Start()
     {
         if (lowToggle != null)
@@ -61,6 +67,9 @@ public class PerformanceSettingsManager : MonoBehaviour
         SetInitialMode();
     }
 
+    /// <summary>
+    /// Updates toggle states and applies the selected initial mode.
+    /// </summary>
     private void SetInitialMode()
     {
         if (lowToggle != null)
@@ -81,6 +90,9 @@ public class PerformanceSettingsManager : MonoBehaviour
         ApplyPerformanceMode(defaultMode);
     }
 
+    /// <summary>
+    /// Enables scene groups according to the selected performance mode.
+    /// </summary>
     private void ApplyPerformanceMode(PerformanceMode mode)
     {
         bool showVegetation = true;

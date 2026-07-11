@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Shared DTOs used by Unity and the Python bridge.
+/// Request sent by Unity to the Python bridge.
 /// </summary>
 [Serializable]
 public class BridgeRequestDto
@@ -26,6 +26,9 @@ public class BridgeRequestDto
     public List<MobileReceiverRequestDto> receivers;
 }
 
+/// <summary>
+/// Input data for one grid voxel request.
+/// </summary>
 [Serializable]
 public class GridVoxelRequestDto
 {
@@ -38,6 +41,9 @@ public class GridVoxelRequestDto
     public float buildingLossDb;
 }
 
+/// <summary>
+/// Input data for one mobile receiver request.
+/// </summary>
 [Serializable]
 public class MobileReceiverRequestDto
 {
@@ -51,6 +57,9 @@ public class MobileReceiverRequestDto
     public float buildingLossDb;
 }
 
+/// <summary>
+/// Response returned by the Python bridge.
+/// </summary>
 [Serializable]
 public class BridgeResponseDto
 {
@@ -59,6 +68,9 @@ public class BridgeResponseDto
     public List<MobileReceiverResultDto> receiverResults;
 }
 
+/// <summary>
+/// Result data returned for one grid voxel.
+/// </summary>
 [Serializable]
 public class VoxelResultDto
 {
@@ -70,6 +82,9 @@ public class VoxelResultDto
     public float prxDbm;
 }
 
+/// <summary>
+/// Result data returned for one mobile receiver.
+/// </summary>
 [Serializable]
 public class MobileReceiverResultDto
 {
@@ -82,5 +97,4 @@ public class MobileReceiverResultDto
     public float pathLossDb;
     public float prxDbm;
     public float snrDb;
-    public float propagationLatencyMs;
 }
