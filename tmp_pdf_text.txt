@@ -1,0 +1,3091 @@
+
+--- PAGE 1 ---
+Universidad de Extremadura
+Centro Universitario de M´erida
+Grado en Ingenier´ıa Telem´atica en
+Telecomunicaci´on
+Trabajo Fin de Grado
+Estudio de cobertura 3D para redescelulares haciendo uso de modelo
+de antenas y canal de propagaci ´on.
+Francisco Montero S´anchez
+M´ erida, septiembre de 2026
+
+--- PAGE 2 ---
+Universidad de Extremadura
+Centro Universitario de M´erida
+Grado en Ingenier´ıa Telem´atica en
+Telecomunicaci´on
+Trabajo Fin de Grado
+Estudio de cobertura 3D para redescelulares haciendo uso de modelo
+de antenas y canal de propagaci ´on.
+Autor:Francisco Montero S´ anchez
+Fdo:
+Director:Jos´ e Javier Rico Palomo
+Fdo:
+Director:Francisco D´ ıaz Barrancas
+Fdo:
+
+--- PAGE 3 ---
+Resumen
+El an´ alisis de la cobertura permite estudiar c´ omo se comporta una se˜ nal
+en un entorno determinado y comprobar si los receptores disponen de con-
+diciones adecuadas para la comunicaci´ on. Este an´ alisis depende de distintos
+factores, como la distancia entre el transmisor y el receptor, la potencia de
+transmisi´ on, el patr´ on de radiaci´ on de la antena, el modelo de propagaci´ on,
+la altura y la presencia de obst´ aculos. Por este motivo, una representaci´ on
+tridimensional puede facilitar la interpretaci´ on de los resultados y mostrar
+c´ omo var´ ıa la se˜ nal en distintas zonas y alturas del escenario.
+En este Trabajo Fin de Grado se desarrolla un simulador tridimensional
+para el estudio de la cobertura en un entorno urbano. La aplicaci´ on combi-
+na Unity, encargado de la representaci´ on gr´ afica y de la interacci´ on con el
+usuario, con un simulador desarrollado en Python, que realiza los c´ alculos de
+propagaci´ on y de las m´ etricas del enlace. Para la simulaci´ on se utilizan mode-
+los de p´ erdidas como FSPL y ABG, junto con p´ erdidas adicionales asociadas
+a los edificios.
+El simulador permite reconstruir una aproximaci´ on tridimensional del
+patr´ on de radiaci´ on de una antena a partir de sus cortes horizontal y vertical.
+Tambi´ en permite representar la potencia recibida mediante mapas de calor
+tridimensionales y vistas bidimensionales por capas de altura. Adem´ as, utiliza
+receptores m´ oviles, como veh´ ıculos y peatones, para analizar la evoluci´ on de
+la potencia recibida y de la relaci´ on se˜ nal-ruido (SNR) durante distintos
+recorridos.
+El simulador se ha realizado sobre una representaci´ on tridimensional del
+Centro Universitario de M´ erida creada para este trabajo. Los resultados ob-
+tenidos permiten observar la influencia del patr´ on de radiaci´ on, la altura, los
+par´ ametros de la simulaci´ on y los obst´ aculos en la cobertura. De esta forma,
+el simulador es una herramienta visual e interactiva que permite comparar
+distintas configuraciones, analizar la cobertura y obtener datos que pueden
+estudiarse posteriormente mediante gr´ aficas.
+I
+
+--- PAGE 4 ---
+Palabras clave -Simulaci´ on 3D, canal de propagaci´ on, redes inal´ ambri-
+cas, comunicaciones vehiculares, Unity, cobertura, patr´ on de radiaci´ on, SNR.
+II
+
+--- PAGE 5 ---
+Abstract
+Coverage analysis makes it possible to study how a signal behaves in a gi-
+ven environment and to determine whether receivers have suitable conditions
+for communication. This analysis depends on several factors, such as the dis-
+tance between the transmitter and the receiver, the transmission power, the
+antenna radiation pattern, the propagation model, height, and the presence
+of obstacles. For this reason, a three-dimensional representation can impro-
+ve the interpretation of the results and show how the signal varies across
+different areas and heights of the scenario.
+This project presents the development of a three-dimensional simulator
+for coverage analysis in an urban environment. The application combines
+Unity, which is responsible for the graphical representation and user inter-
+action, with a simulator developed in Python, which performs the propaga-
+tion and link-metric calculations. Propagation-loss models such as FSPL and
+ABG are used, along with additional losses associated with buildings.
+The simulator reconstructs an approximation of the three-dimensional
+radiation pattern of an antenna from its horizontal and vertical cuts. It al-
+so represents the received power through three-dimensional heat maps and
+two-dimensional views divided into height layers. In addition, it uses mobile
+receivers, such as vehicles and pedestrians, to analyse the evolution of the
+received power and the signal-to-noise ratio (SNR) along different routes.
+The simulator has been developed using a three-dimensional representa-
+tion of the Centro Universitario de M´ erida created for this project. The re-
+sults obtained make it possible to see the influence of the radiation pattern,
+height, simulation parameters, and obstacles on coverage. In this way, the
+simulator provides a visual and interactive tool for comparing different confi-
+gurations, analysing coverage, and obtaining data that can later be analysed
+using graphs.
+Keywords -3D simulation, propagation channel, wireless networks,
+vehicular communications, Unity, coverage, radiation pattern, SNR.
+III
+
+--- PAGE 6 ---
+´Indice general
+´Indice de figuras VII
+´Indice de tablas IX
+1. Introducci´ on 1
+1.1. Motivaci´ on y antecedentes . . . . . . . . . . . . . . . . . . . . 1
+1.2. Objetivos del proyecto . . . . . . . . . . . . . . . . . . . . . . 2
+1.3. Metodolog´ ıa de trabajo . . . . . . . . . . . . . . . . . . . . . . 4
+1.4. Organizaci´ on de la memoria . . . . . . . . . . . . . . . . . . . 5
+2. An´ alisis y descripci´ on del proyecto 6
+2.1. An´ alisis del problema . . . . . . . . . . . . . . . . . . . . . . . 6
+2.2. Requisitos del sistema . . . . . . . . . . . . . . . . . . . . . . 7
+2.3. Tecnolog´ ıas empleadas . . . . . . . . . . . . . . . . . . . . . . 9
+2.4. Planificaci´ on del proyecto . . . . . . . . . . . . . . . . . . . . 10
+2.5. Viabilidad del proyecto . . . . . . . . . . . . . . . . . . . . . . 12
+3. Estado del arte 15
+3.1. Redes celulares . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+3.2. Modelado . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+3.2.1. Simulaci´ on y modelos . . . . . . . . . . . . . . . . . . . 17
+3.2.2. Simulaciones a nivel de enlace y de sistema . . . . . . . 17
+3.2.3. Canal de propagaci´ on y modelos de canal . . . . . . . . 18
+3.2.4. Modelos de p´ erdidas de propagaci´ on . . . . . . . . . . 19
+IV
+
+--- PAGE 7 ---
+3.3. Modelado de antenas . . . . . . . . . . . . . . . . . . . . . . . 21
+3.4. Comunicaciones cr´ ıticas . . . . . . . . . . . . . . . . . . . . . 22
+3.5. V2X y comunicaciones vehiculares . . . . . . . . . . . . . . . . 23
+3.6. Maximizaci´ on de la cobertura . . . . . . . . . . . . . . . . . . 25
+3.7. Herramientas de simulaci´ on de canal tridimensional . . . . . . 26
+3.7.1. NVIDIA Aerial Omniverse Digital Twin . . . . . . . . 26
+3.7.2. Sionna RT . . . . . . . . . . . . . . . . . . . . . . . . . 27
+3.7.3. Altair WinProp . . . . . . . . . . . . . . . . . . . . . . 28
+3.7.4. MATLAB . . . . . . . . . . . . . . . . . . . . . . . . . 29
+4. Dise˜ no del simulador 30
+4.1. Arquitectura general del sistema . . . . . . . . . . . . . . . . . 30
+4.2. Flujo de ejecuci´ on de la aplicaci´ on . . . . . . . . . . . . . . . . 32
+4.3. Dise˜ no del men´ u de configuraci´ on . . . . . . . . . . . . . . . . 33
+4.4. Dise˜ no de la escena de simulaci´ on . . . . . . . . . . . . . . . . 35
+4.5. Integraci´ on entre Unity y Python . . . . . . . . . . . . . . . . 40
+4.6. Modelo de datos e intercambio de informaci´ on . . . . . . . . . 40
+4.7. Dise˜ no de la exportaci´ on de resultados . . . . . . . . . . . . . 42
+5. Desarrollo e implementaci´ on 44
+5.1. Configuraci´ on inicial del proyecto Unity . . . . . . . . . . . . . 44
+5.2. Desarrollo del escenario tridimensional . . . . . . . . . . . . . 45
+5.3. Reconstrucci´ on del patr´ on de radiaci´ on de la antena . . . . . . 49
+5.4. Generaci´ on de la rejilla de propagaci´ on . . . . . . . . . . . . . 51
+5.5. C´ alculo de ganancias transmisor-receptor . . . . . . . . . . . . 52
+5.6. C´ alculo de p´ erdidas, potencia recibida y SNR . . . . . . . . . 53
+5.7. Detecci´ on de obst´ aculos y p´ erdidas por edificios . . . . . . . . 54
+5.8. Mapa de calor 3D y 2D . . . . . . . . . . . . . . . . . . . . . . 56
+5.9. Receptores m´ oviles, rutas y m´ etricas . . . . . . . . . . . . . . 58
+5.10. Paneles de m´ etricas y visualizaci´ on de cobertura . . . . . . . . 59
+5.11. Generaci´ on autom´ atica de CSV y gr´ aficas . . . . . . . . . . . 60
+V
+
+--- PAGE 8 ---
+5.12. Optimizaci´ on y modos de rendimiento . . . . . . . . . . . . . 61
+6. Pruebas y resultados 63
+6.1. Escenario de pruebas . . . . . . . . . . . . . . . . . . . . . . . 63
+6.2. Validaci´ on del patr´ on de radiaci´ on reconstruido . . . . . . . . 65
+6.3. Resultados rejilla de propagaci´ on . . . . . . . . . . . . . . . . 69
+6.4. Resultados de receptores m´ oviles . . . . . . . . . . . . . . . . 73
+6.5. An´ alisis de cobertura seg´ un SNR . . . . . . . . . . . . . . . . 77
+6.6. Comparaci´ on entre configuraciones . . . . . . . . . . . . . . . 79
+6.6.1. Comparaci´ on entre patrones de radiaci´ on . . . . . . . . 80
+6.6.2. Comparaci´ on entre modelos de p´ erdidas . . . . . . . . 82
+6.7. Limitaciones detectadas . . . . . . . . . . . . . . . . . . . . . 84
+7. Conclusiones y trabajos futuros 86
+7.1. Conclusiones . . . . . . . . . . . . . . . . . . . . . . . . . . . . 86
+7.2. Trabajos futuros . . . . . . . . . . . . . . . . . . . . . . . . . 88
+Referencias 91
+A. Uso responsable de herramientas de inteligencia artificial 96
+VI
+
+--- PAGE 9 ---
+´Indice de figuras
+3.1. Arquitectura general del sistema 5G. Fuente: 3GPP [1] . . . . 16
+3.2. Simulaci´ on de la propagaci´ on radioel´ ectrica mediante NVIDIA
+AODT. Fuente: NVIDIA [2]. . . . . . . . . . . . . . . . . . . . 27
+3.3. Escenario urbano y trayectorias de propagaci´ on calculadas en
+Sionna RT. Fuente: NVIDIA [3]. . . . . . . . . . . . . . . . . . 28
+3.4. Representaci´ on de la distribuci´ on de la SINR sobre un escena-
+rio geogr´ afico mediante MATLAB. Fuente: MathWorks [4] . . 29
+4.1. Arquitectura general del simulador . . . . . . . . . . . . . . . 31
+4.2. Flujo general de la aplicaci´ on . . . . . . . . . . . . . . . . . . 33
+4.3. Dise˜ no del men´ u de configuraci´ on . . . . . . . . . . . . . . . . 34
+4.4. Flujo de ejecuci´ on de la simulaci´ on . . . . . . . . . . . . . . . 35
+4.5. Vista del mapa de calor . . . . . . . . . . . . . . . . . . . . . 37
+4.6. Vista ampliada del minimapa 2D . . . . . . . . . . . . . . . . 38
+4.7. Vista del patr´ on de radiaci´ on . . . . . . . . . . . . . . . . . . 38
+4.8. Vista de un receptor m´ ovil . . . . . . . . . . . . . . . . . . . . 39
+4.9. Intercambio de informaci´ on entre Unity y Python . . . . . . . 41
+5.1. Primera comparaci´ on entre el campus real y el modelo 3D
+recreado . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 47
+5.2. Segunda comparaci´ on entre el campus real y el modelo 3D
+recreado . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 48
+5.3. Resultado final del escenario integrado en Unity . . . . . . . . 48
+5.4. Comparaci´ on de los patrones de radiaci´ on implementados . . . 51
+5.5. Mapa de calor 3D con umbral de visualizaci´ on aplicado . . . . 57
+VII
+
+--- PAGE 10 ---
+5.6. Mapa de calor 2D por capas . . . . . . . . . . . . . . . . . . . 58
+6.1. Bolas de debug utilizadas para inspeccionar valores de la rejilla 66
+6.2. Comparaci´ on del patr´ on reconstruido con el de MATLAB . . . 69
+6.3. Mapa de calor 3D para una rejilla reducida de 50×40×50 m 70
+6.4. Mapa de calor 3D para la rejilla completa del campus . . . . . 71
+6.5. Mapa de calor 3D de la rejilla completa aplicando umbral de
+visualizaci´ on . . . . . . . . . . . . . . . . . . . . . . . . . . . . 71
+6.6. Mapa de calor 2D por capas sobre el escenario del campus . . 72
+6.7. Vista del receptor CampusVehicle . . . . . . . . . . . . . . . . 73
+6.8. Vista del receptor LinearVehicle . . . . . . . . . . . . . . . . . 74
+6.9. Vista del receptor Pedestrian . . . . . . . . . . . . . . . . . . . 74
+6.10. Ejemplo de receptor m´ ovil con baja cobertura por obst´ aculos . 75
+6.11. Potencia recibida frente a distancia para el receptor Linear-
+Vehicle . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 76
+6.12. Evoluci´ on temporal de la SNR con potencia de transmisi´ on de
+30 dBm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 77
+6.13. Evoluci´ on temporal de la SNR con potencia de transmisi´ on de
+38 dBm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 78
+6.14. Comparaci´ on de mapas de calor 2D para distintos patrones de
+radiaci´ on a la altura de la antena . . . . . . . . . . . . . . . . 80
+6.15. Comparaci´ on de mapas de calor 2D para distintos patrones de
+radiaci´ on cerca del nivel del suelo . . . . . . . . . . . . . . . . 81
+6.16. Comparaci´ on de mapas de calor 2D utilizando los modelos
+FSPL y ABG . . . . . . . . . . . . . . . . . . . . . . . . . . . 83
+VIII
+
+--- PAGE 11 ---
+´Indice de tablas
+2.1. Requisitos funcionales . . . . . . . . . . . . . . . . . . . . . . 8
+2.2. Requisitos no funcionales . . . . . . . . . . . . . . . . . . . . . 9
+2.3. Estimaci´ on de horas por fase del proyecto . . . . . . . . . . . 12
+6.1. Par´ ametros de prueba . . . . . . . . . . . . . . . . . . . . . . 64
+6.2. Comparaci´ on de ganancias del patr´ on reconstruido . . . . . . 68
+6.3. Porcentaje de tiempo con cobertura seg´ un la SNR . . . . . . . 79
+6.4. Potencia recibida media para distintos patrones de radiaci´ on . 82
+6.5. Potencia recibida media para distintos modelos de p´ erdidas . . 84
+IX
+
+--- PAGE 12 ---
+Cap´ ıtulo 1
+Introducci´ on
+En este cap´ ıtulo se presenta el contexto general del proyecto, junto con la
+motivaci´ on que ha llevado a su desarrollo. Para ello, primero se introducen
+los antecedentes relacionados con el estudio de la cobertura en redes celula-
+res y la necesidad de herramientas de simulaci´ on visuales. A continuaci´ on,
+se describen los objetivos principales y espec´ ıficos del proyecto y la metodo-
+log´ ıa utilizada en su desarrollo. Por ´ ultimo, se muestra la organizaci´ on de la
+memoria, indicando el contenido de cada cap´ ıtulo.
+1.1. Motivaci´ on y antecedentes
+En los ´ ultimos a˜ nos, las redes celulares han evolucionado notablemente
+debido al gran aumento de dispositivos conectados y a la necesidad de ofrecer
+servicios con mayores prestaciones. El streaming de v´ ıdeo, las comunicaciones
+vehiculares o las comunicaciones cr´ ıticas requieren redes capaces de propor-
+cionar buena cobertura, baja latencia y una conexi´ on estable. Por todo esto,
+el estudio de la propagaci´ on es fundamental para entender c´ omo se comporta
+la se˜ nal y c´ omo var´ ıa la cobertura en distintos entornos.
+La cobertura de una red celular puede analizarse a partir de m´ etricas
+como la potencia recibida, la relaci´ on se˜ nal-ruido (SNR) o la relaci´ on se˜ nal-
+interferencia m´ as ruido (SINR). Estas m´ etricas permiten determinar si la
+se˜ nal llega con un nivel suficiente y si puede distinguirse correctamente frente
+al ruido y las interferencias. En este proyecto no se modelan interferencias
+entre varios transmisores, por lo que el an´ alisis se basa en la potencia recibida
+y en la SNR calculada en distintos puntos del escenario.
+El an´ alisis de la cobertura no depende ´ unicamente de la distancia entre el
+1
+
+--- PAGE 13 ---
+transmisor y el receptor; tambi´ en influyen otros factores, como la frecuencia
+utilizada, la potencia de transmisi´ on, el patr´ on de radiaci´ on de las antenas o
+la presencia de obst´ aculos en el entorno. En escenarios tridimensionales, estos
+factores pueden provocar variaciones importantes en la se˜ nal recibida entre
+puntos cercanos, especialmente cuando existen edificios u otros elementos que
+provocan p´ erdidas adicionales.
+Este tipo de estudios se realizan mediante modelos matem´ aticos, simu-
+laciones num´ ericas o herramientas de representaci´ on bidimensional. Estas
+representaciones permiten analizar el comportamiento general de la se˜ nal,
+pero pueden dificultar la interpretaci´ on espacial de los resultados y omitir
+informaci´ on relevante del escenario.
+Uno de los aspectos m´ as importantes que pueden perderse en una re-
+presentaci´ on bidimensional es la influencia de la altura. En un entorno real,
+la se˜ nal no se propaga ´ unicamente sobre un plano, sino que lo hace en tres
+dimensiones. La posici´ on vertical del receptor, la altura de la antena transmi-
+sora, la orientaci´ on del patr´ on de radiaci´ on y la presencia de edificios pueden
+modificar de forma considerable la potencia recibida.
+Adem´ as, la ganancia de una antena no tiene por qu´ e ser igual en todas las
+direcciones. Por tanto, para analizar correctamente la cobertura, es necesario
+considerar tanto la distancia al receptor como la direcci´ on de propagaci´ on.
+A partir de estas necesidades surge la motivaci´ on principal de este proyec-
+to: desarrollar un simulador tridimensional que permita analizar visualmente
+la cobertura en un entorno urbano. La representaci´ on 3D facilita relacionar
+los valores calculados con la posici´ on real de los elementos del escenario y
+estudiar la influencia de la altura, los obst´ aculos y el patr´ on de radiaci´ on.
+Para ello, el proyecto combina Unity con un simulador existente desarro-
+llado en Python. Unity se utiliza para construir el escenario tridimensional,
+representar los mapas de calor y visualizar los receptores m´ oviles, mientras
+que Python realiza los c´ alculos de propagaci´ on y de las m´ etricas del enla-
+ce. De esta forma, la herramienta permite observar c´ omo var´ ıan la potencia
+recibida y la SNR en distintos puntos y recorridos del escenario.
+1.2. Objetivos del proyecto
+El objetivo principal de este trabajo es desarrollar un simulador tridimen-
+sional en Unity que permita analizar la cobertura de una red celular en un
+escenario urbano. La herramienta busca representar de forma visual c´ omo
+var´ ıa la se˜ nal en el entorno, teniendo en cuenta la posici´ on del transmisor, el
+2
+
+--- PAGE 14 ---
+patr´ on de radiaci´ on de la antena, el canal de propagaci´ on, los obst´ aculos y
+la posici´ on de los receptores.
+Para alcanzar este objetivo principal, se plantean los siguientes objetivos
+espec´ ıficos:
+Construir un escenario urbano en tres dimensiones, incluyendo elemen-
+tos como edificios, veh´ ıculos y peatones.
+Modelar el comportamiento de una antena transmisora con un modelo
+omnidireccional y posteriormente con un patr´ on de radiaci´ on espec´ ıfico.
+Reconstruir una aproximaci´ on tridimensional del patr´ on de radiaci´ on
+a partir de los cortes horizontal y vertical de una antena.
+Integrar Unity con un simulador ya existente desarrollado en Python
+para intercambiar los datos de la simulaci´ on y obtener m´ etricas como
+la potencia recibida y la SNR en distintos puntos del escenario.
+Representar la cobertura en distintos puntos del escenario mediante un
+mapa de calor en 3D.
+Incorporar receptores m´ oviles para analizar la variaci´ on de la cobertura
+durante su desplazamiento.
+Exportar los resultados obtenidos en formato CSV para facilitar su
+an´ alisis posterior.
+Junto a los objetivos espec´ ıficos anteriores, tambi´ en se plantearon una se-
+rie de mejoras opcionales para completar el simulador. Estas funcionalidades
+no eran imprescindibles para cumplir el objetivo principal, pero aportan al
+resultado final del proyecto:
+Adaptar el escenario urbano gen´ erico a una representaci´ on tridimen-
+sional del Centro Universitario de M´ erida.
+Mejorar la visualizaci´ on del mapa de calor a˜ nadiendo una vista bidi-
+mensional por capas de altura.
+Generar gr´ aficas autom´ aticamente a partir de los archivos CSV expor-
+tados.
+A˜ nadir modos de rendimiento para mejorar la fluidez de la aplicaci´ on
+en dispositivos con prestaciones reducidas.
+3
+
+--- PAGE 15 ---
+Con estos objetivos, se pretende crear una herramienta que no solo per-
+mita realizar c´ alculos de cobertura, sino tambi´ en interpretar los resultados
+de una forma visual y accesible.
+1.3. Metodolog´ ıa de trabajo
+La metodolog´ ıa seguida en el proyecto fue incremental, dividiendo el tra-
+bajo en distintas fases. El desarrollo no se realiz´ o como una ´ unica implemen-
+taci´ on completa desde el principio, sino como una evoluci´ on progresiva desde
+una primera versi´ on sencilla hasta una m´ as completa.
+En primer lugar, se realiz´ o un estudio inicial del problema y de los concep-
+tos necesarios para entender mejor el an´ alisis de cobertura en redes celulares,
+la propagaci´ on de la se˜ nal, los modelos de canal, los patrones de radiaci´ on
+de antenas y las m´ etricas utilizadas para evaluar la cobertura.
+Tras esta fase inicial, se analiz´ o el simulador existente desarrollado en
+Python, con el objetivo de entender qu´ e datos necesitaba como entrada y
+qu´ e resultados pod´ ıa devolver. A partir de ah´ ı, se dise˜ n´ o un sistema de co-
+municaci´ on entre Unity y Python para enviar desde Unity los datos de la
+simulaci´ on y realizar en Python los c´ alculos relacionados con la propagaci´ on
+y las m´ etricas de cobertura.
+El desarrollo se llev´ o a cabo por fases. Primero se construy´ o el escenario
+urbano gen´ erico tridimensional y se implement´ o una primera versi´ on de la
+simulaci´ on con una antena omnidireccional. Posteriormente, se a˜ nadi´ o a la
+antena un patr´ on de radiaci´ on espec´ ıfico, reconstruyendo una aproximaci´ on
+tridimensional a partir de sus cortes horizontal y vertical. A continuaci´ on, se
+implement´ o la visualizaci´ on de los resultados mediante mapas de calor, per-
+mitiendo representar de forma gr´ afica la cobertura obtenida en el escenario.
+Despu´ es, se a˜ nadieron los receptores m´ oviles y se calcularon sus m´ etricas
+durante el desplazamiento por el escenario. Esta fase permiti´ o analizar la evo-
+luci´ on de la potencia recibida y la SNR para distintos recorridos. Finalmente,
+se incorpor´ o la exportaci´ on de resultados en formato CSV, la generaci´ on au-
+tom´ atica de gr´ aficas y diferentes mejoras visuales y de rendimiento.
+Durante todo el proceso, se realizaron pruebas para comprobar el funcio-
+namiento de cada fase antes de integrarla con el resto del sistema. De esta
+forma, se pudo validar paso a paso la comunicaci´ on entre Unity y Python,
+la reconstrucci´ on del patr´ on de radiaci´ on, el c´ alculo de m´ etricas y la repre-
+sentaci´ on visual de la cobertura. Esta forma de trabajo permiti´ o avanzar de
+manera ordenada y detectar errores de forma m´ as sencilla durante el desa-
+4
+
+--- PAGE 16 ---
+rrollo.
+1.4. Organizaci´ on de la memoria
+La memoria est´ a organizada en siete cap´ ıtulos. Tras este primer cap´ ıtulo
+introductorio, en el que se han presentado la motivaci´ on, los objetivos y la
+metodolog´ ıa seguida durante el proyecto, el resto del documento se estructura
+de la siguiente forma.
+El segundo cap´ ıtulo muestra el an´ alisis y la descripci´ on del proyecto. En
+´ el se plantea el problema que se pretende resolver, se definen los requisitos
+del sistema y se describen las tecnolog´ ıas empleadas. Tambi´ en se incluye la
+planificaci´ on del trabajo y una valoraci´ on de la viabilidad del mismo.
+El tercer cap´ ıtulo corresponde al estado del arte. En ´ el se explican los
+conceptos te´ oricos necesarios para comprender el proyecto, como las redes
+celulares, los modelos de propagaci´ on, el modelado de antenas, las comu-
+nicaciones vehiculares, la maximizaci´ on de cobertura y las herramientas de
+simulaci´ on tridimensional.
+El cuarto cap´ ıtulo describe el dise˜ no del simulador. En ´ el se explica la
+arquitectura general de la aplicaci´ on, el flujo de ejecuci´ on, el dise˜ no de la
+interfaz de configuraci´ on, la escena de simulaci´ on, la integraci´ on entre Unity
+y Python y el modelo de intercambio de informaci´ on entre ambos entornos.
+El quinto cap´ ıtulo se centra en el desarrollo e implementaci´ on del simu-
+lador. Se detallan los principales elementos implementados, como la recons-
+trucci´ on del patr´ on de radiaci´ on, el c´ alculo de ganancias, la generaci´ on de
+mapas de calor, los receptores m´ oviles, la exportaci´ on de resultados y las
+mejoras de rendimiento.
+El sexto cap´ ıtulo presenta las pruebas realizadas y los resultados obte-
+nidos. En ´ el se analiza el funcionamiento del simulador mediante distintos
+escenarios y configuraciones, estudiando la cobertura obtenida, el comporta-
+miento del patr´ on de radiaci´ on y la evoluci´ on de los receptores m´ oviles.
+Por ´ ultimo, el s´ eptimo cap´ ıtulo recoge las conclusiones del trabajo y plan-
+tea posibles l´ ıneas de mejora para trabajos futuros.
+5
+
+--- PAGE 17 ---
+Cap´ ıtulo 2
+An´ alisis y descripci´ on del
+proyecto
+En este cap´ ıtulo se describe el planteamiento general del proyecto. En
+primer lugar, se analiza el problema que se pretende resolver y se definen los
+requisitos principales del sistema. A continuaci´ on, se presentan las tecnolog´ ıas
+utilizadas durante el desarrollo, la planificaci´ on seguida y la viabilidad del
+proyecto.
+2.1. An´ alisis del problema
+El punto de partida de este proyecto es un simulador ya existente desa-
+rrollado en Python [5], disponible p´ ublicamente en GitHub mediante el re-
+positoriohttps://github.com/Jricopal/PythonSimulator_v6, capaz de
+realizar c´ alculos de propagaci´ on y obtener m´ etricas del enlace. Sin embargo,
+este simulador no dispone de una representaci´ on tridimensional interactiva
+del escenario ni de una forma visual de relacionar los resultados calculados
+con la posici´ on real de los elementos del entorno.
+El an´ alisis de cobertura en un escenario urbano no depende ´ unicamen-
+te de la distancia entre el transmisor y el receptor. Tambi´ en influyen otros
+factores como la altura, la orientaci´ on respecto al patr´ on de radiaci´ on de
+la antena, la presencia de edificios, el modelo de propagaci´ on utilizado y el
+movimiento de los receptores. Por este motivo, analizar los resultados ´ unica-
+mente mediante valores num´ ericos o representaciones bidimensionales puede
+dificultar la interpretaci´ on espacial de la cobertura.
+A partir de esta necesidad, se plantea el desarrollo de un simulador tridi-
+6
+
+--- PAGE 18 ---
+mensional que permita representar visualmente la cobertura en un escenario
+urbano. La idea inicial consiste en aprovechar el simulador Python existente
+para realizar los c´ alculos de propagaci´ on, a˜ nadiendo el factor visual de Unity
+que permite interpretar los resultados dentro de un entorno 3D.
+Como transmisor se utiliza una antena de tipo panel del fabricante An-
+drew [6], de la que se dispone de sus cortes horizontal y vertical del patr´ on
+de radiaci´ on. Por ello, se plantea buscar m´ etodos que permitan reconstruir
+una aproximaci´ on tridimensional del patr´ on a partir de esos cortes bidimen-
+sionales.
+Para representar la cobertura en el escenario, se plantea dividir el espacio
+en una rejilla tridimensional de puntos. Cada punto de esta rejilla act´ ua como
+una posici´ on de recepci´ on para la que se calculan las m´ etricas del enlace.
+Con los resultados obtenidos, Unity puede construir un mapa de calor 3D
+que muestre la distribuci´ on de potencia recibida en distintas zonas y alturas
+del escenario.
+Adem´ as de estudiar la cobertura en puntos fijos de la rejilla, tambi´ en se
+plantea a˜ nadir receptores m´ oviles. Estos receptores recorren rutas definidas
+dentro del escenario y permiten analizar c´ omo var´ ıan m´ etricas como la po-
+tencia recibida o la SNR durante el movimiento. De esta forma, el simulador
+no solo permite observar una distribuci´ on est´ atica de cobertura, sino tambi´ en
+estudiar la evoluci´ on del enlace en recorridos concretos.
+Por tanto, se busca crear un simulador tridimensional completamente
+funcional en Unity, aprovechando el simulador Python existente para realizar
+los c´ alculos de propagaci´ on y m´ etricas del enlace. Unity act´ ua como la parte
+visual e interactiva del sistema, encarg´ andose de representar el escenario,
+la antena, los mapas de calor y los receptores m´ oviles. De esta forma, el
+usuario puede modificar par´ ametros, observar la cobertura en distintas zonas
+del escenario, seguir receptores m´ oviles y exportar los datos obtenidos para
+analizarlos posteriormente.
+al final, fue lo que hablamos en la primera reuni´ on, pero quiz´ as de-
+ber´ ıa iniciarlo como algo m´ as gen´ erico sobre las telecomunicaciones.
+2.2. Requisitos del sistema
+A partir del problema planteado y de los objetivos explicados en el cap´ ıtu-
+lo anterior, se definen una serie de requisitos que debe cumplir el simulador.
+7
+
+--- PAGE 19 ---
+Estos requisitos se dividen en requisitos funcionales y no funcionales. A con-
+tinuaci´ on, se muestran los requisitos funcionales definidos para el sistema:
+ID Requisito Descripci´ on
+RF1Escenario 3D El sistema debe permitir representar un es-
+cenario urbano tridimensional donde se pue-
+dan situar los elementos necesarios para la
+simulaci´ on.
+RF2Antena transmiso-
+ra
+El sistema debe incluir una antena dentro del
+escenario y permitir utilizarla como transmi-
+sor de la simulaci´ on.
+RF3Patrones de radia-
+ci´ on
+El sistema debe permitir trabajar con distin-
+tos tipos de patr´ on de radiaci´ on para estu-
+diar c´ omo afectan a la cobertura.
+RF4Reconstrucci´ on del
+patr´ on
+El sistema debe permitir obtener una apro-
+ximaci´ on tridimensional del patr´ on de radia-
+ci´ on de una antena a partir del CSV con los
+cortes bidimensionales.
+RF5Comunicaci´ on
+Unity-Python
+El sistema debe permitir la comunicaci´ on en-
+tre Unity y el simulador Python para inter-
+cambiar los datos necesarios durante la si-
+mulaci´ on.
+RF6Representaci´ on de
+cobertura
+El sistema debe representar la cobertura en
+el escenario mediante una rejilla de puntos
+que act´ uen como posiciones de recepci´ on.
+RF7Receptores m´ oviles El sistema debe incluir receptores m´ oviles y
+mostrar sus m´ etricas durante la simulaci´ on.
+RF8Exportaci´ on de da-
+tos
+El sistema debe exportar los resultados ob-
+tenidos para facilitar su an´ alisis posterior.
+RF9Interfaz de configu-
+raci´ on
+El sistema debe incluir una interfaz de confi-
+guraci´ on inicial para modificar los principa-
+les par´ ametros de la simulaci´ on sin necesidad
+de modificar el c´ odigo.
+Tabla 2.1: Requisitos funcionales
+8
+
+--- PAGE 20 ---
+no se divide bien entre p´ aginas, supongo que valen ambos formatos
+(tabularx/longtable).
+A continuaci´ on, se muestran los requisitos no funcionales definidos para
+el sistema.
+ID Requisito Descripci´ on
+RNF1Facilidad de uso La aplicaci´ on debe ser clara y simple pa-
+ra que el usuario pueda configurar y eje-
+cutar una simulaci´ on desde una interfaz
+gr´ afica.
+RNF2Organizaci´ on de resultados Los resultados exportados deben guar-
+darse de forma ordenada, separando los
+datos generados en cada ejecuci´ on.
+RNF3Rendimiento El sistema debe mantener un rendimien-
+to asumible para un computador perso-
+nal durante la visualizaci´ on y ejecuci´ on
+de la simulaci´ on.
+RNF4Comunicaci´ on autom´ atica La comunicaci´ on entre Unity y Python
+debe realizarse sin que el usuario tenga
+que intervenir durante la ejecuci´ on de la
+aplicaci´ on.
+RNF5Ejecuci´ on independiente La aplicaci´ on debe poder ejecutarse des-
+de un archivo ejecutable que incluya to-
+dos los recursos necesarios para su fun-
+cionamiento sin requerir instalaciones
+adicionales.
+Tabla 2.2: Requisitos no funcionales
+2.3. Tecnolog´ ıas empleadas
+Para el desarrollo del proyecto se utilizan distintas tecnolog´ ıas, cada una
+para una parte concreta del simulador:
+Unity:es un motor de desarrollo utilizado para crear videojuegos, apli-
+caciones en tiempo real y entornos interactivos [7]. Aunque es conocido
+por los videojuegos, tambi´ en destaca en el desarrollo de proyectos 3D
+9
+
+--- PAGE 21 ---
+para distintos sectores. En este proyecto se utiliza como base para eje-
+cutar la simulaci´ on y representar el escenario tridimensional.
+C#:es el lenguaje utilizado para programar en Unity. Aunque Unity
+permite utilizar otros lenguajes mediante herramientas o plugins ex-
+ternos, C# es el lenguaje principal del motor y el que se utiliza en
+su documentaci´ on oficial. En este proyecto se emplea C# en todos los
+scripts encargados de controlar la ejecuci´ on del simulador.
+Python:se utiliza porque el simulador externo empleado en el proyecto
+est´ a desarrollado en este lenguaje. En este trabajo se utiliza como parte
+encargada de realizar los c´ alculos de propagaci´ on y m´ etricas del enlace.
+Adem´ as, tambi´ en se aprovecha para generar gr´ aficas a partir de los
+datos exportados.
+Blender:es un software libre utilizado para la creaci´ on de modelos 3D
+[8]. En este proyecto se utiliza para crear y texturizar el escenario, la
+antena y los modelos de colisi´ on asociados a los edificios.
+Visual Studio Code:es un editor de c´ odigo abierto utilizado para
+programar en distintos lenguajes [9]. En este proyecto se emplea para
+trabajar con los scripts de C# y Python.
+Photoshop:es una herramienta de edici´ on y creaci´ on de im´ agenes [10].
+En este proyecto se utiliza para crear los iconos del simulador y retocar
+las texturas de los materiales del escenario.
+2.4. Planificaci´ on del proyecto
+La planificaci´ on del proyecto se realiza de forma incremental. En lugar de
+desarrollar todas las funcionalidades al mismo tiempo, se construye el simu-
+lador por fases, ampliando progresivamente una primera versi´ on funcional.
+Esto permite comprobar cada parte antes de continuar con la siguiente y
+a˜ nadir mejoras seg´ un las necesidades que surgen durante el desarrollo.
+El desarrollo del proyecto se divide en las siguientes fases o incrementos:
+1.Estudio previo:en esta fase se analiza el simulador Python existente,
+c´ omo se usa y qu´ e partes son necesarias para este proyecto. Tambi´ en
+se estudian los m´ etodos existentes para la reconstrucci´ on del patr´ on
+de radiaci´ on a partir de cortes bidimensionales y se repasan conceptos
+generales de antenas, propagaci´ on y transmisi´ on de datos.
+10
+
+--- PAGE 22 ---
+2.Preparaci´ on del proyecto:una vez realizado el estudio previo, se
+crea el proyecto en Unity y se prepara una primera escena de pruebas
+con una antena de tipo panel, un entorno urbano sencillo y receptores
+m´ oviles iniciales. Tambi´ en se define la organizaci´ on de carpetas que se
+utilizar´ a durante el desarrollo. Esta fase sirve como puesta en marcha
+del proyecto.
+3.Reconstrucci´ on del patr´ on de radiaci´ on:se implementa la recons-
+trucci´ on del patr´ on de radiaci´ on de la antena a partir de sus cortes
+bidimensionales. Tambi´ en se a˜ nade su representaci´ on tridimensional
+dentro de la escena para poder comprobar visualmente la forma del
+patr´ on utilizado en la simulaci´ on.
+4.Integraci´ on de Unity y Python:se crea un puente entre Unity
+y el simulador Python mediante una estructura TCP cliente-servidor.
+Adem´ as, se a˜ nade una versi´ on portable de Python al proyecto para que
+la aplicaci´ on pueda ejecutar el simulador sin depender de una instala-
+ci´ on externa.
+5.Mapa de calor 3D:se desarrolla una representaci´ on tridimensional
+de la cobertura a partir de una rejilla de puntos de recepci´ on. Esta
+fase permite visualizar los resultados del simulador externo dentro del
+escenario tridimensional.
+6.Receptores m´ oviles:se a˜ naden receptores con diferentes recorridos
+dentro del escenario. Tambi´ en se a˜ nade la visualizaci´ on de sus m´ etricas
+en tiempo real durante la simulaci´ on.
+7.Adaptaci´ on del escenario al Centro Universitario de M´ erida:
+en esta fase, se construye una representaci´ on tridimensional del campus
+universitario a tama˜ no real y se sustituye el escenario inicial de pruebas.
+8.Mejoras visuales y de rendimiento:se aplican mejoras visuales
+al mapa de calor y a la visualizaci´ on de cobertura de los receptores
+m´ oviles. Adem´ as, se incorporan mejoras de rendimiento para mejorar
+la fluidez de la aplicaci´ on.
+9.Exportaci´ on de datos y generaci´ on de gr´ aficas:se implementa la
+exportaci´ on de resultados en CSV, el guardado de la configuraci´ on de
+cada ejecuci´ on y la generaci´ on autom´ atica de gr´ aficas mediante Python.
+10.Documentaci´ on y revisi´ on final:se redacta la memoria del pro-
+yecto, se preparan las figuras necesarias para la documentaci´ on y se
+11
+
+--- PAGE 23 ---
+realizan pruebas finales para detectar y corregir errores de la aplica-
+ci´ on.
+Al finalizar cada fase, se realizan pruebas individuales para comprobar que
+la funcionalidad implementada funciona correctamente antes de continuar
+con el siguiente incremento. Una vez completados todos los incrementos, en
+la ´ ultima fase, se realizan las pruebas finales descritas en el Cap´ ıtulo 6. Estas
+pruebas permiten validar el funcionamiento global del simulador, comprobar
+los resultados obtenidos y comparar distintas configuraciones de simulaci´ on.
+2.5. Viabilidad del proyecto
+La viabilidad del proyecto se analiza teniendo en cuenta el tiempo de
+desarrollo, el coste econ´ omico estimado y los recursos necesarios para llevarlo
+a cabo. Para ello, se realiza primero una estimaci´ on de horas por cada una
+de las fases del proyecto, obteniendo as´ ı una aproximaci´ on del tiempo total
+de trabajo necesario.
+Fase Descripci´ on Horas
+1 Estudio previo 25
+2 Preparaci´ on del proyecto 20
+3 Reconstrucci´ on y visualizaci´ on del patr´ on de radiaci´ on 20
+4 Integraci´ on de Unity y Python 15
+5 Mapa de calor 3D 25
+6 Receptores m´ oviles 20
+7 Adaptaci´ on del escenario al Centro Universitario de M´ erida 80
+8 Mejoras visuales y de rendimiento 35
+9 Exportaci´ on de datos y generaci´ on de gr´ aficas 10
+10 Documentaci´ on y revisi´ on final 80
+Total 330
+Tabla 2.3: Estimaci´ on de horas por fase del proyecto
+Como se puede ver en la Tabla 2.3, el tiempo total estimado para el
+desarrollo del proyecto es de 330 horas. El proyecto se desarrolla durante un
+12
+
+--- PAGE 24 ---
+periodo aproximado de cinco meses. Considerando cuatro semanas por mes
+y cinco d´ ıas de trabajo por semana, se obtiene un total de 100 d´ ıas para la
+realizaci´ on del proyecto. A partir de las horas totales estimadas, la dedicaci´ on
+media del proyecto es de aproximadamente 3,3 horas diarias durante cinco
+meses.
+Para estimar el coste del proyecto, se toma como referencia el XVIII
+Convenio colectivo estatal de empresas de consultor´ ıa, tecnolog´ ıas de la in-
+formaci´ on y estudios de mercado, publicado en el BOE [11]. Se asume una
+clasificaci´ on en el´Area 3, Grupo C, Nivel 3, ya que el proyecto implica ta-
+reas de desarrollo de software, programaci´ on e integraci´ on realizadas con
+autonom´ ıa t´ ecnica, aunque bajo la supervisi´ on de ambos tutores.
+Seg´ un las tablas salariales publicadas en el convenio, esta categor´ ıa tiene
+un salario m´ ınimo de 22.503,15 euros brutos anuales. Teniendo en cuenta una
+jornada m´ axima anual de 1.800 horas se puede calcular el coste por hora:
+22503,15€
+1800 horas = 12,50€/h
+A partir del coste por hora y la estimaci´ on de 330 horas, se obtiene que
+el coste estimado en salarios para el desarrollo del proyecto es de aproxima-
+damente 4.125,58 euros brutos.
+Adem´ as del coste de personal, se tienen en cuenta las herramientas uti-
+lizadas durante el desarrollo. La mayor´ ıa de las tecnolog´ ıas empleadas son
+gratuitas; en el caso de Unity, se utiliza la licencia personal, de coste cero,
+mientras no se superen los 200.000 d´ olares de ingresos en los ´ ultimos 12 meses
+[12].
+El ´ unico coste de software considerado es Photoshop, utilizado para la
+creaci´ on de iconos y el retoque de texturas. Su coste mensual es de 26,43
+euros [10]. Al utilizarse durante los cinco meses de desarrollo, el coste total
+asociado es:
+26,43€/mes·5 meses = 132,15€
+Tambi´ en debe tenerse en cuenta que tanto el equipo utilizado para el
+desarrollo como el sistema operativo Windows tienen un coste asociado. Sin
+embargo, no se incluyen en el c´ alculo econ´ omico porque se considera que ya
+estaban disponibles antes del inicio del proyecto.
+Sumando el coste estimado del personal y el coste de Photoshop, se ob-
+tiene el coste total aproximado del proyecto:
+13
+
+--- PAGE 25 ---
+4125,58€+ 132,15€= 4257,73€
+Por tanto, el coste total estimado del proyecto es de 4.257,73 euros. Este
+valor corresponde principalmente al tiempo de desarrollo, ya que el coste
+del software es bajo y el equipo de trabajo se considera disponible desde el
+inicio. Al reutilizar el simulador Python existente y herramientas gratuitas,
+el proyecto resulta viable desde el punto de vista econ´ omico.
+Respecto a la viabilidad temporal, el simulador tambi´ en es viable porque
+se apoya en tecnolog´ ıas muy utilizadas como Unity, C# y Python. Adem´ as,
+al incluir una versi´ on portable de Python dentro del proyecto, se evita de-
+pender de instalaciones externas en el dispositivo del usuario. Tambi´ en se
+trata de una herramienta flexible, ya que permite modificar los principales
+par´ ametros de la simulaci´ on. Esto facilita su adaptaci´ on a nuevos escenarios
+o a tecnolog´ ıas futuras sin tener que cambiar la estructura del simulador.
+veh´ ıculos, se especifica V2X y, en el peat´ on, 5G FR1, porque para
+los valores por defecto usamos eso. No obstante, si el usuario, en un
+futuro, quisiese usar otra tecnolog´ ıa que use otro ancho de banda,
+ganancia o lo que sea, podr´ ıa cambiarlo, aunque en la etiqueta
+ponga esa tecnolog´ ıa. ¿Tiene sentido, no? Tambi´ en puedo quitar la
+tecnolog´ ıa de la etiqueta para que sea m´ as est´ andar.
+14
+
+--- PAGE 26 ---
+Cap´ ıtulo 3
+Estado del arte
+En este cap´ ıtulo se presentan los principales conceptos y trabajos previos
+relacionados con el an´ alisis de la cobertura en redes celulares. Para ello, se
+explica el modelado de la propagaci´ on y de las antenas, las comunicaciones
+cr´ ıticas y V2X, la maximizaci´ on de la cobertura y las herramientas existentes
+para la simulaci´ on del canal en escenarios tridimensionales.
+3.1. Redes celulares
+Las comunicaciones m´ oviles tienen un papel fundamental en la sociedad
+actual, ya que permiten mantener la conectividad mientras los usuarios se
+desplazan. Para ofrecer este servicio en ´ areas extensas, las redes m´ oviles
+dividen su ´ area de cobertura en distintas zonas geogr´ aficas.
+Estas redes se denominan redes celulares y cada una de esas zonas recibe
+el nombre de celda. Seg´ un la Uni´ on Internacional de Telecomunicaciones
+(ITU), una celda es el ´ area de cobertura radioel´ ectrica proporcionada por
+una estaci´ on base o por uno de sus subsistemas, como un sector de antena
+[13].
+solo se puede extraer de glosarios de la ITU. He encontrado dos glo-
+sarios, uno en un apartado dentro de la web de la ITUhttps://www.
+itu.int/ITU-D/ict/publications/wtdr_99/material/glossary.htmly
+la recomendaci´ on; he usado la segunda porque es la m´ as reciente
+(la encontr´ e en las referencias del TFG que me disteis de ejemplo).
+Esta divisi´ on en celdas permite organizar la cobertura de una zona amplia
+15
+
+--- PAGE 27 ---
+y reutilizar los recursos radioel´ ectricos en distintas ´ areas. De esta forma, los
+usuarios pueden desplazarse por el territorio manteniendo la conexi´ on con
+la red y cambiando de celda cuando sea necesario. La cobertura se refiere al
+alcance de una red m´ ovil celular y puede medirse en t´ erminos de cobertura
+geogr´ afica o de poblaci´ on cubierta [13].
+La arquitectura utilizada por las redes celulares ha evolucionado con las
+distintas generaciones. En el caso de 5G, el sistema est´ a formado por el equipo
+de usuario (UE), la red de acceso radio de nueva generaci´ on (NG-RAN) y el
+n´ ucleo de red 5G (5GC), como se muestra en la Figura 3.1 [1].
+Figura 3.1: Arquitectura general del sistema 5G. Fuente: 3GPP [1]
+coverage, traduzco como cobertura radioel´ ectrica y radio access
+dice el chatGPT que se traduce como acceso radio. Me suena un
+poco raro, pero no se muy bien como traducir eso.
+Dentro de la NG-RAN, el gNodeB (gNB) act´ ua como estaci´ on base de
+5G NR y establece la comunicaci´ on radio con el equipo de usuario [1]. Esta
+comunicaci´ on depende de la cobertura proporcionada por la estaci´ on base y
+de las condiciones de propagaci´ on de la se˜ nal.
+El an´ alisis de la cobertura permite determinar las zonas en las que puede
+establecerse correctamente la comunicaci´ on. Para ello, es necesario estudiar
+la se˜ nal recibida en diferentes posiciones y considerar los factores que afectan
+su propagaci´ on.
+16
+
+--- PAGE 28 ---
+3.2. Modelado
+3.2.1. Simulaci´ on y modelos
+Para analizar el comportamiento de una red celular antes de su despliegue
+real, pueden utilizarse simulaciones. Una simulaci´ on reproduce la evoluci´ on
+de un sistema real a lo largo del tiempo y permite estudiar su funcionamien-
+to sin realizar experimentos directamente sobre ´ el. Esto resulta ´ util cuando
+dichos experimentos son costosos, peligrosos, requieren demasiado tiempo o
+sus variables de inter´ es son inaccesibles [14].
+Toda simulaci´ on requiere un modelo, es decir, una representaci´ on simpli-
+ficada que refleja algunas propiedades del sistema real. Para realizar simula-
+ciones se utilizan principalmente modelos matem´ aticos, en lugar de modelos
+f´ ısicos u otros medios de representaci´ on. Adem´ as, las limitaciones y las con-
+diciones de validez del modelo deben tenerse en cuenta al interpretar los
+resultados [14].
+del NIST; supongo que cuenta como fuente de informaci´ on fiable.
+El propio NIST cita los libros que utiliza como referencia, pero no
+los he encontrado online.
+3.2.2. Simulaciones a nivel de enlace y de sistema
+Las simulaciones de comunicaciones inal´ ambricas pueden realizarse a nivel
+de enlace o a nivel de sistema:
+Simulaciones a nivel de enlace:estudian una comunicaci´ on punto
+a punto entre un transmisor y un receptor. Permiten analizar el com-
+portamiento y las caracter´ ısticas de un enlace concreto [2].
+Simulaciones a nivel de sistema:consideran varios enlaces que
+transmiten y reciben simult´ aneamente. De esta forma, permiten anali-
+zar el comportamiento conjunto de la red y c´ omo afectan unos enlaces
+a otros [2].
+Las simulaciones a nivel de enlace se centran, por tanto, en el comporta-
+miento de una comunicaci´ on concreta. Por otro lado, las simulaciones a nivel
+de sistema ampl´ ıan el an´ alisis a varios transmisores y receptores, permitiendo
+estudiar su interacci´ on y el rendimiento global del sistema [2].
+17
+
+--- PAGE 29 ---
+3.2.3. Canal de propagaci´ on y modelos de canal
+En las comunicaciones inal´ ambricas, el canal de propagaci´ on determina
+c´ omo se transmite la se˜ nal entre el transmisor y el receptor. Su comporta-
+miento depende de las condiciones del entorno y de la posici´ on de ambos
+extremos del enlace.
+Los modelos de canal se utilizan para representar estas condiciones de
+propagaci´ on mediante distintos escenarios, par´ ametros y procedimientos, con
+el objetivo de estimar las caracter´ ısticas de la se˜ nal recibida [15].
+El 3rd Generation Partnership Project (3GPP) define modelos de canal
+para distintos escenarios de propagaci´ on. Entre ellos se encuentran la micro-
+celda urbana (UMi), la macrocelda urbana (UMa) y los entornos interiores. A
+su vez, estos modelos distinguen entre condiciones de propagaci´ on con l´ ınea
+de visi´ on directa (LOS) y sin l´ ınea de visi´ on directa (NLOS) [15].
+Sight” y NLOS ”Non-Line of Sight” o vale con la traducci´ on al
+espa˜ nol.
+Los escenarios UMi, UMa e interiores se diferencian principalmente por
+el tipo de entorno, la posici´ on de la estaci´ on base y la distancia entre em-
+plazamientos. En UMi, las estaciones base se sit´ uan por debajo de la altura
+de los edificios y se consideran entornos como calles, plazas o zonas urbanas
+abiertas. En UMa, se ubican por encima de los tejados de los edificios cir-
+cundantes. Por otro lado, los escenarios interiores representan entornos como
+oficinas y centros comerciales, donde las estaciones base suelen instalarse en
+paredes o techos a menor altura [15].
+la antena est´ a por encima de los edificios, aunque no llega a los
+25 m de altura para UMa seg´ un 3GPP. No obstante, como est´ a
+a decisi´ on del usuario configurar UMi/UMa con ABG y esto es
+estado del arte, no lo voy a mencionar.
+Uno de los par´ ametros principales de estos modelos es la p´ erdida de pro-
+pagaci´ on, que representa la atenuaci´ on experimentada por la se˜ nal durante
+su recorrido. Su c´ alculo depende del escenario considerado, de la condici´ on
+LOS o NLOS y de par´ ametros como la distancia entre el transmisor y el
+receptor, la frecuencia utilizada y la altura de ambos extremos del enlace
+[15].
+Adem´ as de la p´ erdida de propagaci´ on, el modelo de 3GPP contempla otros
+18
+
+--- PAGE 30 ---
+efectos, como el desvanecimiento por sombra, las p´ erdidas de penetraci´ on en
+edificios y la dispersi´ on temporal y angular de la se˜ nal [15]. La consideraci´ on
+de estos par´ ametros permite representar con mayor detalle las condiciones
+de propagaci´ on de cada escenario.
+3.2.4. Modelos de p´ erdidas de propagaci´ on
+Modelo de p´ erdidas en el espacio libre
+El modelo de p´ erdidas en el espacio libre (Free-Space Path Loss, FSPL)
+representa la p´ erdida de se˜ nal producida al propagarse entre un transmisor
+y un receptor en condiciones de espacio libre. Cuando la distancia entre las
+antenas es mucho mayor que la longitud de onda, puede calcularse mediante
+la siguiente expresi´ on [16]:
+Lbf (dB) = 20 log10
+4πd
+λ
+
+(3.1)
+dondedes la distancia entre las antenas, expresada en metros, yλes la
+longitud de onda de la se˜ nal, tambi´ en expresada en metros.
+Teniendo en cuenta quec=λf, la expresi´ on tambi´ en puede escribirse
+como:
+Lbf (dB) = 20 log10
+4πd f
+c
+
+(3.2)
+dondefes la frecuencia de la se˜ nal, expresada en hercios, yces la velo-
+cidad de propagaci´ on de la luz, expresada en metros por segundo.
+puesta en el campus virtual. El resto de fuentes usaba otra versi´ on
+de L = 32.4 + 20log... que no he usado nunca.
+Modelo Alpha-Beta-Gamma
+El modelo Alpha-Beta-Gamma (ABG) es un modelo de p´ erdidas de pro-
+pagaci´ on a gran escala que expresa las p´ erdidas en funci´ on de la distancia
+entre el transmisor y el receptor y de la frecuencia de la se˜ nal. Este modelo
+ha sido utilizado en estudios de propagaci´ on para redes 5G [17]. Las p´ erdidas
+calculadas mediante el modelo ABG se expresan como:
+19
+
+--- PAGE 31 ---
+P LABG (dB) = 10αlog 10
+ d
+1 m
+
++β
++ 10γlog 10
+ f
+1 GHz
+
++X ABG
+σ
+(3.3)
+dondedes la distancia entre el transmisor y el receptor, expresada en
+metros;fes la frecuencia de la se˜ nal, expresada en GHz;α,βyγson los
+coeficientes del modelo; yX ABG
+σ es una variable aleatoria expresada en dB
+que representa las variaciones producidas por el desvanecimiento por sombra
+[17].
+(la saqu´ e de tu TFG, asi que es la misma) pone que esta ecuaci´ on
+solo se cumple cuando d es mayor o igual a 1 m. En el mapa de
+calor, si ponemos un mapa de 1x1x1 metros con un tama˜ no de
+voxel de 0’1, ninguna medida ser´ ıa v´ alida porque los 1000 voxeles
+del mapa de calor se encuentran a una distancia menor a 1 m.
+¿Ignoramos esa condici´ on? No la he a˜ nadido a la f´ ormula por
+ese mismo motivo. Otra opci´ on es que si se encuentra un receptor
+a menos de 1m se calculen p´ erdidas como si estuviese a 1 m (eso
+lo ten´ ıa hecho ya pero con 0.001 m).
+En principio, pocas medidas deber´ ıa haber a esa distancia; solo
+pasar´ ıa en el mapa de calor si el tama˜ no del v´ oxel es peque˜ no y
+est´ an pegados a la antena.
+Los par´ ametros del modeloα,βyγpueden ajustarse a partir de los datos
+obtenidos para un escenario determinado [17].
+modelos de p´ erdidas que se utilizan posteriormente en el simulador.
+El CI de interiores me lo he salto porque no est´ a implementado y
+no se hace nada en interiores.
+La potencia recibida por los receptores tambi´ en est´ a condicionada por la
+forma en que la antena distribuye la energ´ ıa en el espacio. Por esto, el mode-
+lado de su patr´ on de radiaci´ on es otro aspecto fundamental para representar
+el enlace entre el transmisor y el receptor.
+20
+
+--- PAGE 32 ---
+3.3. Modelado de antenas
+Las caracter´ ısticas de una antena determinan c´ omo se distribuye la energ´ ıa
+radiada en el espacio. Esta distribuci´ on se representa mediante el patr´ on de
+radiaci´ on, que muestra c´ omo var´ ıa la ganancia de la antena seg´ un la direc-
+ci´ on de propagaci´ on. Para analizar su comportamiento de forma completa,
+es necesario disponer de un patr´ on tridimensional que permita conocer la
+ganancia alrededor de toda la antena.
+Sin embargo, la informaci´ on proporcionada por los fabricantes se limita
+a los cortes horizontal y vertical. Estos patrones bidimensionales muestran
+el comportamiento de la antena en dos planos, pero no permiten conocer
+directamente los valores correspondientes a las direcciones situadas fuera de
+ellos. Por este motivo, se han desarrollado diferentes m´ etodos para estimar
+el patr´ on tridimensional completo a partir de ambos cortes.
+Uno de los procedimientos m´ as sencillos y directos consiste en sumar los
+valores de los patrones horizontal y vertical expresados en escala logar´ ıtmica,
+normalmente en decibelios, para obtener la ganancia correspondiente a cada
+direcci´ on. Este m´ etodo es f´ acil de implementar y puede proporcionar buenos
+resultados en antenas omnidireccionales con patrones regulares o sim´ etricos.
+Sin embargo, en antenas directivas o con patrones m´ as complejos, puede dar
+lugar a errores importantes, especialmente fuera del l´ obulo principal [18].
+Gil et al. propusieron un m´ etodo de interpolaci´ on para reconstruir el
+patr´ on tridimensional de antenas de estaci´ on base a partir de los cortes ho-
+rizontal y vertical. Su procedimiento combina ambos patrones teniendo en
+cuenta la direcci´ on que se desea estimar [19].
+Este m´ etodo utiliza toda la informaci´ on disponible en los cortes horizontal
+y vertical, por lo que puede conservar las diferencias existentes entre las
+distintas partes del patr´ on vertical. No obstante, no puede reconstruir de
+forma exacta las caracter´ ısticas del patr´ on que no aparecen representadas en
+dichos cortes. Por este motivo, pueden producirse errores en zonas como los
+l´ obulos secundarios o las direcciones alejadas de los planos principales.
+Posteriormente, Vasiliadis et al. presentaron un m´ etodo de aproximaci´ on
+basado en la combinaci´ on ponderada de los dos cortes principales. En lugar
+de sumar directamente ambos valores, el m´ etodo asigna un peso diferente
+a cada corte en funci´ on de la distancia angular existente entre la direcci´ on
+que se desea estimar y los planos horizontal y vertical. De este modo, las
+direcciones reciben una mayor influencia del plano m´ as cercano [20].
+Esta combinaci´ on ponderada permite reducir el error respecto al m´ etodo
+21
+
+--- PAGE 33 ---
+de suma directa. Adem´ as, el m´ etodo presenta buenos resultados tanto para
+antenas omnidireccionales como para antenas directivas. Sin embargo, su
+funcionamiento depende de un par´ ametro k, que controla la forma en que se
+distribuyen los pesos de los cortes horizontal y vertical. Los autores explican
+que un valork= 2 minimiza el error de la reconstrucci´ on, aunque tambi´ en
+indican que el valor m´ as adecuado puede depender de la directividad y de
+las caracter´ ısticas de cada antena [20].
+Otra limitaci´ on del m´ etodo de Vasiliadis se encuentra en la interpretaci´ on
+del corte vertical. El procedimiento utiliza 360 muestras del patr´ on horizontal
+y 180 muestras del patr´ on vertical [20]. Si las dos mitades del patr´ on vertical
+son sim´ etricas, una de ellas puede utilizarse para representar la otra sin que
+se produzcan diferencias. Sin embargo, cuando el patr´ on no es sim´ etrico, la
+reducci´ on del corte vertical implica la p´ erdida de la informaci´ on correspon-
+diente a una de sus mitades.
+Adem´ as de estos m´ etodos, tambi´ en es posible reconstruir patrones tri-
+dimensionales mediante t´ ecnicas dedeep learning. MathWorks proporciona
+una implementaci´ on que utiliza una red neuronal entrenada para estimar un
+patr´ on tridimensional a partir de cortes bidimensionales [21]. La red apren-
+de la relaci´ on entre los cortes principales y los patrones tridimensionales
+reconstruidos a partir de un conjunto de antenas utilizadas durante el entre-
+namiento.
+Este m´ etodo es m´ as dif´ ıcil de implementar, ya que requiere una gran
+cantidad de muestras para entrenar y validar el modelo. Sin embargo, el
+deep learningpermite reconstruir patrones m´ as complejos que los m´ etodos
+anteriores.
+El modelado del patr´ on de radiaci´ on permite estimar con mayor precisi´ on
+la ganancia de la antena en cada direcci´ on y, por tanto, analizar c´ omo se
+distribuye la cobertura en el escenario. Este an´ alisis resulta especialmente
+importante en servicios donde la comunicaci´ on debe mantenerse incluso en
+situaciones de emergencia o en condiciones desfavorables.
+3.4. Comunicaciones cr´ ıticas
+Las comunicaciones cr´ ıticas son aquellas utilizadas por organismos de
+protecci´ on p´ ublica y atenci´ on ante desastres en situaciones donde la vida hu-
+mana, los bienes u otros valores de la sociedad est´ an en riesgo, especialmente
+cuando el tiempo es un factor determinante. Estas comunicaciones deben ser
+seguras, fiables y estar disponibles cuando se necesiten [22].
+22
+
+--- PAGE 34 ---
+Debido a la importancia de estas situaciones, las comunicaciones cr´ ıticas
+presentan requisitos m´ as exigentes que otros servicios convencionales. Deben
+ofrecer baja latencia, alta disponibilidad y fiabilidad, capacidad para gestio-
+nar un gran n´ umero de usuarios y dispositivos, seguridad y mecanismos de
+prioridad [23].
+Adem´ as, estos sistemas deben permitir el intercambio de distintos tipos
+de informaci´ on. 3GPP utiliza el t´ ermino MCX para agrupar las aplicaciones
+cr´ ıticas, entre las que se incluyenMission Critical Push To Talk(MCPTT),
+para las comunicaciones de voz;Mission Critical Video(MCVideo), para la
+transmisi´ on de v´ ıdeo en tiempo real; yMission Critical Data(MCData), para
+el intercambio de datos en tiempo real [23].
+Estos servicios pueden utilizarse en aplicaciones de seguridad p´ ublica y
+en otros ´ ambitos que requieren una comunicaci´ on fiable, como las operacio-
+nes mar´ ıtimas y determinados sectores comerciales [23]. Tambi´ en permiten
+realizar comunicaciones entre usuarios individuales y grupos, facilitando el
+intercambio de informaci´ on entre los distintos participantes de una operaci´ on.
+En este contexto, la cobertura es un aspecto especialmente importante.
+La p´ erdida de conexi´ on o una calidad insuficiente de la se˜ nal puede impedir el
+intercambio de voz, v´ ıdeo o datos en situaciones donde la comunicaci´ on resul-
+ta necesaria. Por este motivo, el an´ alisis de la propagaci´ on permite identificar
+zonas con problemas de cobertura y estudiar c´ omo influyen factores como la
+posici´ on de la antena, el patr´ on de radiaci´ on, la distancia y los obst´ aculos
+presentes en el entorno.
+Las herramientas de simulaci´ on permiten realizar este an´ alisis antes de
+desplegar o modificar una red. Mediante ellas es posible representar la distri-
+buci´ on de la se˜ nal en un escenario, evaluar la cobertura en distintas posicio-
+nes y localizar las zonas en las que las condiciones de comunicaci´ on pueden
+resultar insuficientes para este tipo de comunicaciones.
+3.5. V2X y comunicaciones vehiculares
+Las comunicaciones vehiculares permiten intercambiar informaci´ on entre
+los veh´ ıculos y otros elementos de su entorno. Estas se denominanVehicle-
+to-Everything(V2X) y permiten que veh´ ıculos, infraestructuras, servidores
+de aplicaciones y peatones recopilen y compartan informaci´ on de su entorno
+para ofrecer servicios relacionados con la seguridad, la eficiencia del tr´ afico y
+otras aplicaciones de los sistemas de transporte inteligente [24].
+3GPP define cuatro tipos de comunicaciones V2X: veh´ ıculo a veh´ ıculo
+23
+
+--- PAGE 35 ---
+(Vehicle-to-Vehicle, V2V), veh´ ıculo a infraestructura (Vehicle-to-Infrastructure,
+V2I), veh´ ıculo a red (Vehicle-to-Network, V2N) y veh´ ıculo a peat´ on (Vehicle-
+to-Pedestrian, V2P) [24].
+En las comunicaciones V2V, los veh´ ıculos cercanos entre s´ ı intercambian
+informaci´ on, como su posici´ on o su movimiento. En V2I, el veh´ ıculo se comu-
+nica con elementos de la infraestructura, como una unidad situada junto a la
+carretera, llamadaRoad Side Unit(RSU). En V2N, el veh´ ıculo intercambia
+informaci´ on con un servidor de aplicaciones a trav´ es de la red. Por ´ ultimo,
+V2P permite la comunicaci´ on entre veh´ ıculos y usuarios vulnerables, como
+peatones, mediante los dispositivos asociados a cada uno de ellos [24].
+El intercambio de esta informaci´ on permite que los veh´ ıculos y el resto
+de elementos conozcan mejor lo que ocurre en su entorno. A partir de es-
+tos datos, se pueden desarrollar aplicaciones como los avisos de colisi´ on, la
+coordinaci´ on entre veh´ ıculos o la conducci´ on automatizada. Estas aplicacio-
+nes pueden contribuir tanto a mejorar la seguridad vial como a aumentar la
+eficiencia del tr´ afico [24].
+Las comunicaciones V2X tienen requisitos espec´ ıficos debido al movimien-
+to de los veh´ ıculos y a la necesidad de transmitir informaci´ on en un tiempo
+reducido. 3GPP establece requisitos relacionados con la latencia, la fiabili-
+dad, el alcance de la comunicaci´ on, la densidad de UE y la velocidad de los
+veh´ ıculos. Por ejemplo, para transferir mensajes entre dos UE que soporten
+aplicaciones V2V o V2P, se establece una latencia m´ axima de 100 ms, mien-
+tras que, en casos como la detecci´ on previa a una colisi´ on, la latencia m´ axima
+no puede superar los 20 ms [24].
+Las aplicaciones V2X m´ as avanzadas se pueden agrupar en cuatro cate-
+gor´ ıas: la formaci´ on de grupos de veh´ ıculos que circulan de manera coordi-
+nada, la conducci´ on avanzada, el intercambio de informaci´ on procedente de
+sensores y la conducci´ on remota [25]. Estos casos pueden requerir el env´ ıo
+frecuente de datos y altos niveles de fiabilidad, especialmente cuando la in-
+formaci´ on recibida se utiliza para tomar decisiones sobre el movimiento del
+veh´ ıculo.
+En este tipo de comunicaciones, la cobertura y la calidad de la se˜ nal
+son factores fundamentales. El movimiento de los veh´ ıculos modifica conti-
+nuamente la distancia y la direcci´ on respecto a la antena, mientras que los
+edificios y otros obst´ aculos pueden introducir p´ erdidas adicionales. Por ello, el
+an´ alisis de la propagaci´ on permite estudiar c´ omo var´ ıan la potencia recibida
+y la SNR durante un recorrido e identificar zonas en las que la comunicaci´ on
+vehicular puede no ser viable.
+24
+
+--- PAGE 36 ---
+3.6. Maximizaci´ on de la cobertura
+Como se ha explicado anteriormente en este cap´ ıtulo, cada celda repre-
+senta el ´ area de cobertura proporcionada por una estaci´ on base. La maxi-
+mizaci´ on de la cobertura busca ampliar las zonas de la celda en las que los
+UE pueden acceder a la red y mantener correctamente la comunicaci´ on, re-
+duciendo los puntos donde la cobertura es insuficiente.
+La maximizaci´ on de la cobertura no implica simplemente aumentar el
+alcance de la celda. Tambi´ en es necesario evitar que la se˜ nal se extienda
+m´ as all´ a de la zona prevista, ya que esto puede aumentar el solapamiento
+con otras celdas y generar m´ as interferencias. Por este motivo, es necesario
+mantener un equilibrio entre cobertura y capacidad [26].
+Para mejorar la cobertura, se pueden optimizar par´ ametros como la po-
+tencia de transmisi´ on, la inclinaci´ on de la antena y su orientaci´ on horizontal
+[26]. Estos par´ ametros modifican la celda, ya que afectan a la potencia reci-
+bida y a las direcciones en las que se concentra la radiaci´ on.
+El aumento de la potencia de transmisi´ on eleva la potencia recibida por
+los UE y puede ampliar la zona de la celda en la que la se˜ nal supera el nivel
+necesario para mantener la comunicaci´ on. Sin embargo, su valor debe ajus-
+tarse para evitar que la cobertura alcance zonas m´ as alejadas de lo previsto.
+La inclinaci´ on y la orientaci´ on horizontal de la antena permiten dirigir
+el l´ obulo principal hacia las zonas donde se desea proporcionar una mayor
+cobertura. La forma del patr´ on de radiaci´ on determina la ganancia disponible
+en cada direcci´ on y, por tanto, la distribuci´ on espacial de la cobertura.
+Uno de los problemas que se busca reducir son los huecos de cobertura.
+3GPP define un hueco de cobertura como una zona donde la intensidad de
+la se˜ nal queda por debajo del umbral necesario para que un UE acceda a la
+red o donde la SINR de la celda servidora y de las celdas vecinas no permite
+mantener el servicio b´ asico. Estos huecos pueden deberse a obst´ aculos f´ ısi-
+cos, a una configuraci´ on inadecuada de los par´ ametros de la antena o a una
+planificaci´ on radioel´ ectrica insuficiente [26].
+Tambi´ en pueden aparecer zonas de cobertura d´ ebil, en las que la intensi-
+dad de la se˜ nal, la SNR o la SINR quedan por debajo del nivel necesario para
+alcanzar el rendimiento previsto. A su vez, puede producirse una cobertura
+excesiva cuando la se˜ nal de una celda alcanza zonas mucho m´ as alejadas de
+las planificadas [26].
+Por tanto, la maximizaci´ on de la cobertura requiere estudiar la distri-
+buci´ on de la se˜ nal dentro de la celda y ajustar los par´ ametros de la antena
+25
+
+--- PAGE 37 ---
+en funci´ on del entorno. Las herramientas de simulaci´ on permiten comparar
+distintas configuraciones de potencia, orientaci´ on y patr´ on de radiaci´ on, as´ ı
+como localizar huecos y zonas de cobertura d´ ebil antes de realizar cambios
+en una red real.
+3.7. Herramientas de simulaci´ on de canal tri-
+dimensional
+El an´ alisis de la cobertura en escenarios tridimensionales puede realizarse
+mediante herramientas que combinan la representaci´ on del entorno con mo-
+delos de propagaci´ on. Estas plataformas permiten establecer transmisores y
+receptores dentro de un escenario digital, configurar sus par´ ametros y estu-
+diar c´ omo afectan la geometr´ ıa y los materiales del escenario a la propagaci´ on
+de la se˜ nal.
+el estado del arte y mover el de soluciones alternativas al estado del
+arte. No obstante, al hacerlo, veo que son equivalentes; he quitado
+el de soluciones alternativas y lo he metido todo aqu´ ı. No s´ e si el
+de soluciones alternativas se refer´ ıa a otra cosa.
+3.7.1. NVIDIA Aerial Omniverse Digital Twin
+NVIDIA Aerial Omniverse Digital Twin (AODT) es una plataforma de
+gemelo digital para la investigaci´ on y el desarrollo de redes 6G. Esta herra-
+mienta utiliza NVIDIA Omniverse para representar el entorno tridimensional
+y tecnolog´ ıas deray tracingmediante GPU para simular el comportamiento
+de la propagaci´ on radioel´ ectrica [2].
+AODT permite realizar simulaciones a nivel de sistema, considerando va-
+rios transmisores y receptores que funcionan simult´ aneamente. La plataforma
+puede utilizarse tanto en escenarios formados por una ´ unica estaci´ on base y
+un bajo n´ umero de UE, como en representaciones urbanas con cientos de
+estaciones base y miles de UE [2].
+Para modelar la propagaci´ on, AODT utiliza un solucionador electro-
+magn´ etico basado enray tracing. Este modelo tiene en cuenta reflexiones,
+difracciones y efectos de dispersi´ on difusa direccional. Tambi´ en permite de-
+finir los patrones de radiaci´ on de los elementos de antena, por lo que la
+ganancia depende de la direcci´ on de propagaci´ on [2].
+26
+
+--- PAGE 38 ---
+AODT combina la simulaci´ on del entorno radioel´ ectrico con simuladores
+de la red de acceso radio y de los UE. De esta forma, permite estudiar tanto
+la propagaci´ on como el rendimiento a nivel de sistema y probar distintos
+algoritmos antes de desplegarlos en una red real [2].
+En la Figura 3.2 se muestra un escenario urbano representado mediante
+AODT, junto con las trayectorias de propagaci´ on simuladas entre el trans-
+misor y el receptor.
+Figura 3.2: Simulaci´ on de la propagaci´ on radioel´ ectrica mediante NVIDIA AODT. Fuente: NVIDIA [2].
+3.7.2. Sionna RT
+Sionna RT es una biblioteca de c´ odigo abierto desarrollada por NVIDIA
+para el modelado de la propagaci´ on radioel´ ectrica medianteray tracing. Per-
+mite representar escenarios tridimensionales y calcular el comportamiento
+del canal entre transmisores y receptores situados en diferentes posiciones
+[3].
+La herramienta est´ a construida sobre Mitsuba 3, un sistema de rende-
+rizado orientado a la simulaci´ on del transporte de la luz y al renderizado
+diferenciable. En Sionna RT, Mitsuba 3 se utiliza para cargar, representar y
+gestionar la geometr´ ıa y los materiales de los escenarios tridimensionales [3].
+27
+
+--- PAGE 39 ---
+Los escenarios pueden crearse, editarse y exportarse mediante Blender
+utilizando el complemento Mitsuba-Blender. Tambi´ en es posible generar es-
+cenarios a partir de datos de OpenStreetMap mediante complementos es-
+pec´ ıficos de Blender [3].
+Una vez cargado el escenario, Sionna RT permite definir transmisores,
+receptores, patrones de antena y propiedades radioel´ ectricas de los materiales.
+A partir de estos elementos, puede calcular los caminos de propagaci´ on y
+obtener par´ ametros como los coeficientes del canal, los retardos o los ´ angulos
+de llegada y salida [3].
+En la Figura 3.3 se muestra un escenario urbano de M´ unich representado
+mediante Sionna RT, junto con las trayectorias de propagaci´ on calculadas
+entre un transmisor y un receptor.
+Figura 3.3: Escenario urbano y trayectorias de propagaci´ on calculadas en Sionna RT. Fuente: NVIDIA [3].
+3.7.3. Altair WinProp
+Altair WinProp es una herramienta orientada al an´ alisis de la propagaci´ on
+radioel´ ectrica y a la planificaci´ on de redes inal´ ambricas. Permite estudiar la
+cobertura en distintos tipos de escenarios, como entornos urbanos, rurales,
+28
+
+--- PAGE 40 ---
+industriales e interiores, y dispone de modelos de propagaci´ on y funciones de
+planificaci´ on para diferentes tecnolog´ ıas de comunicaci´ on [27].
+3.7.4. MATLAB
+MATLAB tambi´ en tiene herramientas para analizar y visualizar la pro-
+pagaci´ on radioel´ ectrica en escenarios tridimensionales. MedianteSite Viewer
+es posible colocar transmisores y receptores, representar enlaces y generar
+mapas de cobertura y de SINR tanto en entornos exteriores como interiores
+[4].
+Adem´ as, MATLAB permite utilizar modelos deray tracingpara calcular
+los caminos seguidos por la se˜ nal y estudiar c´ omo influyen la geometr´ ıa y los
+materiales del escenario en la propagaci´ on.
+En la Figura 3.4 se muestra un mapa de SINR generado sobre un escenario
+geogr´ afico. La escala de colores permite identificar las zonas con mejores y
+peores condiciones de recepci´ on.
+Figura 3.4: Representaci´ on de la distribuci´ on de la SINR sobre un escenario geogr´ afico mediante MATLAB.
+Fuente: MathWorks [4]
+29
+
+--- PAGE 41 ---
+Cap´ ıtulo 4
+Dise˜ no del simulador
+En este cap´ ıtulo se describe el dise˜ no general del simulador desarrollado.
+Se presenta la arquitectura de la aplicaci´ on, el flujo de ejecuci´ on y la fun-
+ci´ on de los principales componentes del sistema. Adem´ as, se explica c´ omo se
+organiza la interfaz de configuraci´ on, la escena de simulaci´ on, la integraci´ on
+entre Unity y Python, y la exportaci´ on de resultados.
+4.1. Arquitectura general del sistema
+La arquitectura general del simulador se divide en dos grandes bloques:
+la aplicaci´ on desarrollada en Unity y un entorno Python portable integrado.
+Unity act´ ua como base de la aplicaci´ on, encarg´ andose de la interacci´ on con
+el usuario, la configuraci´ on de la simulaci´ on, la construcci´ on del escenario, la
+visualizaci´ on de los resultados y la exportaci´ on final de datos. Por otra parte,
+Python se encarga de los c´ alculos relacionados con el canal de propagaci´ on
+y de la generaci´ on autom´ atica de gr´ aficas.
+En la Figura 4.1 se muestra el diagrama de componentes del sistema. En
+la parte superior se representa el bloque de Unity, formado por el men´ u de
+configuraci´ on, la escena de simulaci´ on y el cliente TCP. En la parte inferior
+se muestra el entorno Python portable integrado, que contiene el servidor
+TCP, el simulador Python y el generador de gr´ aficas.
+30
+
+--- PAGE 42 ---
+Figura 4.1: Arquitectura general del simulador
+Dentro de Unity, el men´ u de configuraci´ on permite introducir los par´ ame-
+tros necesarios para llevar a cabo la simulaci´ on, como la potencia de la antena
+transmisora, la frecuencia, el modelo de propagaci´ on o el tama˜ no de la rejilla
+que forma el mapa de calor tridimensional. Adem´ as, el sistema utiliza como
+entrada un fichero CSV con informaci´ on del patr´ on de radiaci´ on de la antena.
+Este fichero contiene caracter´ ısticas b´ asicas de la antena, junto con los
+valores del patr´ on de radiaci´ on en los planos horizontal y vertical. Con esta
+informaci´ on, Unity reconstruye una aproximaci´ on tridimensional del patr´ on y
+calcula la ganancia de la antena en funci´ on de la direcci´ on entre el transmisor
+y el punto del escenario deseado.
+El entorno Python portable se integra dentro del proyecto para evitar
+depender de que el usuario final haya instalado Python previamente. Duran-
+te la simulaci´ on, Unity se comunica con un servidor TCP ejecutado en este
+31
+
+--- PAGE 43 ---
+entorno, enviando los datos necesarios y recibiendo los resultados calcula-
+dos. Estos resultados se utilizan para representar la cobertura y generar los
+archivos de salida.
+Con esta arquitectura se busca aprovechar lo mejor de cada entorno. Unity
+se utiliza para construir el escenario tridimensional, representar la cobertura
+y permitir que el usuario interact´ ue en tiempo real, mientras que Python
+permite reutilizar el simulador de propagaci´ on ya existente.
+4.2. Flujo de ejecuci´ on de la aplicaci´ on
+El funcionamiento de la aplicaci´ on se lleva a cabo a trav´ es de dos escenas
+principales: el men´ u de configuraci´ on y la escena de simulaci´ on. En el men´ u, el
+usuario ajusta los valores de los par´ ametros que se utilizar´ an posteriormente
+en la simulaci´ on. Estos pueden ser tanto t´ ecnicos, como la potencia de la
+antena transmisora, como visuales, de exportaci´ on o de rendimiento.
+Antes de iniciar la simulaci´ on, la aplicaci´ on valida los datos introducidos.
+El usuario no puede avanzar hasta que todos los par´ ametros sean correctos.
+Cuando la configuraci´ on es v´ alida, los par´ ametros se guardan y se carga la
+escena de simulaci´ on.
+La Figura 4.2 muestra el flujo general de la aplicaci´ on. El bloqueEjecutar
+simulaci´ onrepresenta el proceso completo que se realiza dentro de la escena
+de simulaci´ on. Este proceso se explica en detalle en apartados posteriores de
+este cap´ ıtulo.
+32
+
+--- PAGE 44 ---
+Figura 4.2: Flujo general de la aplicaci´ on
+Durante la simulaci´ on, el usuario puede permanecer en la escena obser-
+vando los resultados o volver al men´ u de configuraci´ on. En caso de volver
+al men´ u, la aplicaci´ on exporta los resultados pendientes para evitar que se
+pierda informaci´ on. Adem´ as, desde el men´ u se puede cerrar la aplicaci´ on.
+4.3. Dise˜ no del men´ u de configuraci´ on
+Una vez se inicia el simulador, el usuario puede elegir entre salir de la
+aplicaci´ on o iniciar la configuraci´ on. Desde este men´ u se ajustan todos los
+par´ ametros que se utilizar´ an posteriormente en la simulaci´ on, evitando que
+estos valores sean fijos o que deban introducirse manualmente a trav´ es de un
+fichero.
+El men´ u est´ a formado por una pantalla principal y cuatro pantallas de
+configuraci´ on. A su vez, estas pantallas se dividen en varias secciones. Esto
+hace que los par´ ametros queden organizados por bloques y la configuraci´ on
+33
+
+--- PAGE 45 ---
+sea m´ as clara.
+La Figura 4.3 muestra la primera pantalla de configuraci´ on, dedicada a
+la antena y al modelo de propagaci´ on. En esta secci´ on se encuentran algunos
+de los valores principales de la simulaci´ on, como la potencia de transmisi´ on,
+la frecuencia, el ancho de banda, el modelo de p´ erdidas o el m´ etodo utilizado
+para reconstruir el patr´ on de radiaci´ on de la antena.
+Figura 4.3: Dise˜ no del men´ u de configuraci´ on
+El resto de pantallas siguen la misma idea de organizaci´ on por bloques. La
+segunda pantalla permite configurar la rejilla de propagaci´ on y los receptores
+m´ oviles, indicando las dimensiones del mapa de calor, el tama˜ no de cada voxel
+y las ganancias de los receptores. La tercera pantalla agrupa las opciones de
+visualizaci´ on y rendimiento, como la transparencia de los voxeles o el modo
+de rendimiento de la aplicaci´ on. Por ´ ultimo, la cuarta pantalla de resultados
+y gr´ aficas se utiliza para seleccionar qu´ e gr´ aficas se generar´ an para cada
+34
+
+--- PAGE 46 ---
+receptor m´ ovil al finalizar la simulaci´ on.
+En la pantalla de configuraci´ on de la rejilla se muestra tambi´ en el n´ ume-
+ro total de voxeles que se generar´ an con los valores seleccionados. Esto sirve
+como referencia para que el usuario pueda estimar la carga de la simulaci´ on
+antes de iniciarla, ya que una rejilla m´ as detallada aumenta el n´ umero de
+voxeles que deben generarse y puede afectar al rendimiento seg´ un las carac-
+ter´ ısticas del equipo utilizado.
+Antes de cargar la escena de simulaci´ on, la aplicaci´ on valida los valores
+introducidos por el usuario. Si alg´ un par´ ametro no es correcto, no se permite
+continuar hasta que sea corregido. Una vez validada la configuraci´ on, los
+datos se guardan y se utilizan para inicializar la escena de simulaci´ on.
+4.4. Dise˜ no de la escena de simulaci´ on
+La escena de simulaci´ on es la parte principal de la aplicaci´ on, ya que
+en ella se encuentran el escenario tridimensional, el patr´ on de radiaci´ on, los
+mapas de calor y los receptores m´ oviles. Esta escena se carga despu´ es de
+validar la configuraci´ on del men´ u inicial.
+La ejecuci´ on de la escena sigue el flujo mostrado en la Figura 4.4. Nada
+m´ as cargar la escena, el primer paso es cargar la configuraci´ on guardada en
+el men´ u. A continuaci´ on, se reconstruye el patr´ on de radiaci´ on de la antena
+y se prepara la rejilla de propagaci´ on sobre la que se calcular´ a la potencia
+recibida. Posteriormente, se env´ ıan los datos a Python y una vez recibidos
+los resultados de la rejilla, se representan los mapas de calor. Finalmente,
+se activan los receptores m´ oviles y, durante la simulaci´ on, sus m´ etricas se
+actualizan y guardan peri´ odicamente.
+Figura 4.4: Flujo de ejecuci´ on de la simulaci´ on
+Para representar la cobertura en el escenario, la aplicaci´ on crea una rejilla
+35
+
+--- PAGE 47 ---
+tridimensional de voxeles. Un voxel puede entenderse como el equivalente a
+un p´ ıxel, pero en tres dimensiones: en lugar de representar un punto de una
+imagen 2D, representa una regi´ on del espacio. Para cada voxel se calcula
+un valor de potencia recibida y, a partir de ese valor, se colorea la regi´ on
+correspondiente dentro del mapa de calor.
+Esta representaci´ on permite observar la distribuci´ on de potencia dentro
+de un volumen, pero tambi´ en tiene una limitaci´ on importante. Cuando se
+muestran muchos voxeles semitransparentes al mismo tiempo, la visualiza-
+ci´ on puede saturarse y hacer que gran parte del escenario se vea con tonos
+similares. Por este motivo, se a˜ naden par´ ametros de transparencia y un um-
+bral de visualizaci´ on. Las transparencias permiten controlar el peso visual
+de los voxeles seg´ un su potencia, mientras que el umbral permite ocultar las
+zonas con menor potencia recibida y centrarse en las regiones m´ as relevantes.
+Adem´ as del mapa de calor 3D, se a˜ nade un minimapa 2D por capas, que
+permite analizar la misma informaci´ on en cortes horizontales a distintas al-
+turas. De esta forma, el usuario puede consultar tanto la distribuci´ on general
+de la potencia en el volumen como el comportamiento de una capa concreta.
+Por defecto, se muestra la capa m´ as pr´ oxima a la altura de la antena.
+La escena se organiza en varias vistas para evitar mostrar toda la infor-
+maci´ on al mismo tiempo y facilitar la visualizaci´ on. Las vistas disponibles
+son las siguientes:
+Vista del mapa de calor:muestra la distribuci´ on de la potencia
+recibida en el escenario mediante mapas de calor.
+Vista del patr´ on de radiaci´ on:permite observar el patr´ on de radia-
+ci´ on reconstruido de la antena transmisora.
+Vistas de receptores m´ oviles:cada receptor m´ ovil tiene una vista
+propia, en la que la c´ amara sigue su recorrido y se muestran sus m´ etricas
+de enlace.
+Para controlar estas vistas, se utiliza una c´ amara que cambia de posici´ on
+seg´ un la vista en el modo activo. En las vistas del mapa de calor y del patr´ on
+de radiaci´ on, la c´ amara se sit´ ua alrededor de la antena y puede ajustarse
+mediante sliders de zoom, rotaci´ on y elevaci´ on. Estos controles permiten
+observar los resultados desde distintos ´ angulos. En las vistas de los receptores
+m´ oviles, la c´ amara sigue al receptor seleccionado.
+La Figura 4.5 muestra la vista del mapa de calor dentro de la escena de
+simulaci´ on. En ella se puede ver la distribuci´ on de los elementos principales
+36
+
+--- PAGE 48 ---
+de esta vista, como los controles de c´ amara, el minimapa, el slider de umbral,
+los botones de simulaci´ on y las opciones de rendimiento.
+Figura 4.5: Vista del mapa de calor
+Adem´ as, el minimapa puede ampliarse al pulsar sobre ´ el, mostrando la
+misma informaci´ on con m´ as detalle, como se observa en la Figura 4.6. Esta
+vista ampliada tambi´ en dispone de una leyenda con los valores m´ ınimo y
+m´ aximo de potencia recibida, lo que permite interpretar mejor la escala de
+colores utilizada en el mapa.
+37
+
+--- PAGE 49 ---
+Figura 4.6: Vista ampliada del minimapa 2D
+La vista del patr´ on de radiaci´ on permite ver la forma tridimensional del
+patr´ on reconstruido, como se muestra en la Figura 4.7. Esta vista tambi´ en
+incluye una leyenda con la ganancia m´ ınima y m´ axima en dBi, de forma que
+el usuario pueda relacionar los colores y la forma del patr´ on con los valores
+de ganancia de la antena en cada direcci´ on.
+Figura 4.7: Vista del patr´ on de radiaci´ on
+38
+
+--- PAGE 50 ---
+Las vistas de receptores m´ oviles permiten seguir el recorrido de cada
+receptor dentro del escenario y ver sus m´ etricas en tiempo real. En estas
+vistas, la c´ amara sigue al receptor seleccionado y se muestra un panel con
+informaci´ on como la distancia al transmisor, la potencia recibida, la SNR,
+las p´ erdidas del enlace o las colisiones con edificios.
+Adem´ as de las m´ etricas num´ ericas, se a˜ nade a cada receptor m´ ovil un
+indicador visual de cobertura. Este indicador muestra un mensaje sobre el
+receptor con el estado de la cobertura y un c´ ırculo de color en el suelo. De
+esta forma, se puede identificar r´ apidamente si la cobertura del receptor es
+excelente, buena, aceptable o insuficiente. En la Figura 4.8 se muestra un
+ejemplo de vista asociada a un receptor m´ ovil.
+Figura 4.8: Vista de un receptor m´ ovil
+La escena de simulaci´ on cuenta tambi´ en con controles de simulaci´ on. En
+la parte inferior derecha, el bot´ on de pausa permite detener la simulaci´ on,
+cambiando entre el icono de pausa y reanudar seg´ un el estado actual. El
+bot´ on de volver al men´ u, en la parte superior izquierda, permite salir de la
+escena de simulaci´ on y volver al men´ u de configuraci´ on. Antes de volver, en
+caso de que queden resultados pendientes, la aplicaci´ on exporta los resultados
+para evitar que se pierdan los datos registrados hasta ese momento.
+Por ´ ultimo, en la parte superior derecha se a˜ naden botones de rendi-
+miento. Estos permiten desactivar elementos secundarios del escenario, como
+vegetaci´ on, parque o edificios de fondo. Esta opci´ on es clave para adaptar el
+39
+
+--- PAGE 51 ---
+simulador a equipos con diferentes prestaciones, ya que la representaci´ on del
+escenario y del mapa de calor puede afectar notablemente al rendimiento.
+4.5. Integraci´ on entre Unity y Python
+La integraci´ on entre Unity y Python permite reutilizar el simulador ex-
+terno ya existente sin tener que reimplementar sus c´ alculos dentro de Unity.
+En este proyecto, Unity se encarga de la parte visual e interactiva de la apli-
+caci´ on, adem´ as de preparar los datos de la escena, como la rejilla y el patr´ on
+de radiaci´ on reconstruido. Por otro lado, Python se utiliza para integrar el
+simulador externo y realizar los c´ alculos del canal de propagaci´ on.
+Para facilitar la ejecuci´ on de la aplicaci´ on, se incluye un entorno Python
+portable dentro del simulador. Este entorno contiene el int´ erprete de Python
+y las librer´ ıas necesarias para ejecutar el simulador externo y los scripts
+auxiliares, evitando que el usuario tenga que instalar Python o configurar
+dependencias de forma manual.
+La comunicaci´ on entre ambos entornos se realiza de forma local mediante
+TCP. Unity act´ ua como cliente y Python como servidor. Cuando la escena
+de simulaci´ on necesita calcular la potencia recibida en la rejilla o actualizar
+las m´ etricas de los receptores m´ oviles, Unity prepara una petici´ on y la env´ ıa
+al servidor Python. Una vez procesada, Python devuelve una respuesta con
+los resultados calculados.
+Los mensajes intercambiados entre ambos entornos utilizan formato JSON.
+Esto permite enviar la informaci´ on de forma estructurada y facilita la con-
+versi´ on de los datos entre C# y Python, ya que ambos lenguajes disponen de
+librer´ ıas para serializar y deserializar datos en este formato. De esta forma,
+Unity puede generar una petici´ on con los par´ ametros necesarios para la si-
+mulaci´ on y Python puede devolver una respuesta organizada con los valores
+obtenidos.
+4.6. Modelo de datos e intercambio de infor-
+maci´ on
+Para que Unity y Python puedan intercambiar informaci´ on, los datos se
+agrupan en Data Transfer Objects (DTO). Estos objetos son clases simples
+formadas por varios atributos y se utilizan para agrupar los datos que deben
+enviarse o recibirse en cada petici´ on. Antes de enviar una petici´ on, Unity
+40
+
+--- PAGE 52 ---
+convierte los DTO a JSON para poder transmitirlos al servidor Python. De
+la misma forma, cuando recibe una respuesta en JSON, la convierte a DTO
+para tratar los resultados de forma m´ as sencilla dentro de la aplicaci´ on.
+La Figura 4.9 muestra el intercambio de informaci´ on entre Unity y Python
+para la rejilla de propagaci´ on y los receptores m´ oviles.
+Figura 4.9: Intercambio de informaci´ on entre Unity y Python
+En ambos casos, Unity env´ ıa una petici´ on a partir de un DTO con par´ ame-
+tros comunes de la simulaci´ on, como la frecuencia o la potencia de trans-
+misi´ on, adem´ as de la informaci´ on espec´ ıfica seg´ un el c´ alculo que se quiera
+realizar.
+En el caso de la rejilla de propagaci´ on, Unity env´ ıa los datos de los voxe-
+les que forman el mapa de calor. Para cada voxel se incluye su posici´ on, la
+ganancia de transmisi´ on correspondiente a esa direcci´ on, el n´ umero de coli-
+siones con edificios y la p´ erdida asociada. Python devuelve para cada punto
+la distancia al transmisor, las p´ erdidas del enlace y la potencia recibida. Con
+estos resultados, Unity colorea los voxeles para representar el mapa de calor.
+En el caso de los receptores m´ oviles, Unity env´ ıa la posici´ on actual de
+cada receptor, la ganancia de recepci´ on y la ganancia de transmisi´ on en la
+direcci´ on transmisor-receptor. Tambi´ en se env´ ıa la informaci´ on de colisiones
+y p´ erdidas asociadas. Python devuelve las m´ etricas calculadas para cada
+receptor, entre ellas la potencia recibida y la SNR. Estos valores se utilizan
+para actualizar los paneles de m´ etricas, los indicadores de cobertura y el
+registro de resultados.
+41
+
+--- PAGE 53 ---
+4.7. Dise˜ no de la exportaci´ on de resultados
+La exportaci´ on de resultados se dise˜ na para guardar la informaci´ on ge-
+nerada durante la simulaci´ on y permitir su an´ alisis posterior. Adem´ as de
+mostrar los resultados de forma visual dentro de Unity, el simulador genera
+archivos externos que pueden consultarse una vez finalizada la ejecuci´ on.
+Los resultados se guardan dentro de una carpetaResultscreada junto a
+la aplicaci´ on. Para cada ejecuci´ on se genera una subcarpeta identificada con
+la fecha y hora de la simulaci´ on. De esta forma, cada prueba queda separada
+del resto sin mezclar archivos generados en ejecuciones distintas.
+Durante la simulaci´ on, la aplicaci´ on registra peri´ odicamente las m´ etricas
+de cada receptor m´ ovil. Para cada muestra, se almacena el instante de tiempo,
+la distancia al transmisor, la posici´ on del receptor, la potencia recibida, la
+SNR, las p´ erdidas del enlace y el n´ umero de colisiones con edificios. Estos
+datos se guardan posteriormente en archivos CSV, generando un fichero para
+cada receptor.
+Estos CSV guardan todas las muestras obtenidas durante el recorrido.
+Esto permite reconstruir posteriormente el camino seguido por cada receptor,
+dibujar otro tipo de gr´ aficas o analizar los datos con otros criterios fuera de
+la aplicaci´ on.
+Tambi´ en se exporta un CSV con el patr´ on de radiaci´ on tridimensional
+reconstruido. Este archivo permite conservar la matriz de ganancias utilizada
+por el simulador para que pueda revisarse o analizarse fuera de Unity en caso
+de ser necesario.
+Adem´ as, se guarda un fichero de configuraci´ on de la ejecuci´ on, donde
+se encuentran los par´ ametros principales utilizados en la simulaci´ on. Esto
+permite reconstruir posteriormente las condiciones de una prueba y comparar
+los resultados obtenidos con diferentes configuraciones.
+A partir de los CSV, la aplicaci´ on permite generar gr´ aficas autom´ ati-
+camente. Desde el men´ u de configuraci´ on, el usuario puede seleccionar qu´ e
+gr´ aficas quiere obtener para cada receptor, como potencia recibida frente a
+distancia, SNR frente a distancia o SNR frente al tiempo. Al finalizar la si-
+mulaci´ on, se utiliza el entorno Python integrado para generar estas gr´ aficas
+a partir de los datos exportados.
+Las gr´ aficas frente a la distancia no se deben interpretar como una rela-
+ci´ on ´ unica entre distancia y cobertura, ya que en un escenario tridimensional
+existen muchos puntos distintos a una misma distancia del transmisor. La po-
+tencia recibida y la SNR tambi´ en dependen de la direcci´ on respecto al patr´ on
+42
+
+--- PAGE 54 ---
+de radiaci´ on, la altura, los obst´ aculos atravesados y el recorrido seguido por
+el receptor. Aun as´ ı, estas gr´ aficas son ´ utiles para comparar distintas confi-
+guraciones de simulaci´ on, patrones de antena o modelos de propagaci´ on bajo
+un mismo recorrido.
+La exportaci´ on tambi´ en se tiene en cuenta al volver al men´ u de confi-
+guraci´ on. Si el usuario sale de la escena de simulaci´ on y existen resultados
+pendientes, la aplicaci´ on los exporta antes de cargar de nuevo el men´ u.
+43
+
+--- PAGE 55 ---
+Cap´ ıtulo 5
+Desarrollo e implementaci´ on
+En este cap´ ıtulo se describe el desarrollo e implementaci´ on del simulador
+a partir del dise˜ no presentado anteriormente. Se explica c´ omo se configur´ o
+el proyecto en Unity, c´ omo se construy´ o el escenario tridimensional y c´ omo
+se implementaron los elementos principales de la simulaci´ on: la reconstruc-
+ci´ on del patr´ on de radiaci´ on, la generaci´ on de la rejilla de voxeles, el c´ alculo
+de m´ etricas mediante Python, la representaci´ on de los mapas de calor, el
+seguimiento de receptores m´ oviles, la exportaci´ on de resultados y las optimi-
+zaciones de rendimiento.
+5.1. Configuraci´ on inicial del proyecto Unity
+La primera parte del desarrollo consiste en preparar la base sobre la que
+se desarrolla el simulador. Antes de implementar los c´ alculos de cobertura o
+la visualizaci´ on de resultados, se debe organizar el proyecto, crear las escenas
+principales y preparar todos los elementos involucrados en la simulaci´ on.
+El proyecto se divide en dos escenas principales: una para el men´ u de
+configuraci´ on y otra para la simulaci´ on, siguiendo la estructura definida en
+el cap´ ıtulo anterior. Esta separaci´ on permite organizar, por un lado, los ele-
+mentos de la interfaz inicial y, por otro, los componentes propios de la escena
+de simulaci´ on.
+Tambi´ en se organiza la estructura de carpetas del proyecto. Los scripts
+se agrupan seg´ un su funci´ on en tres grupos principales: scripts del men´ u,
+scripts de configuraci´ on de la simulaci´ on y scripts de simulaci´ on. A su vez,
+los scripts de simulaci´ on se dividen en varios subgrupos: patr´ on de radiaci´ on,
+receptores m´ oviles, rendimiento, rejilla de propagaci´ on, comunicaci´ on con
+44
+
+--- PAGE 56 ---
+Python y visualizaci´ on.
+Adem´ as, se crean carpetas espec´ ıficas para otros recursos utilizados por
+la aplicaci´ on. Los modelos 3D se organizan en una carpeta espec´ ıfica, junto
+con carpetas separadas para prefabs, materiales, shaders, sprites y render
+textures. Esta separaci´ on facilita la localizaci´ on de cada tipo de recurso y
+evita mezclar todos los recursos en una misma carpeta.
+Por otro lado, se utiliza la carpetaStreamingAssetspara guardar los
+recursos que deben estar disponibles durante la ejecuci´ on, como el simulador
+externo, el entorno Python portable, sus librer´ ıas y los archivos de entrada.
+Esta carpeta se mantiene tanto durante el desarrollo como despu´ es de com-
+pilar la aplicaci´ on, por lo que Unity puede acceder a estos recursos en tiempo
+de ejecuci´ on sin depender de rutas externas al proyecto.
+Tambi´ en se utiliza una clase de configuraci´ on com´ un para conservar los
+valores introducidos por el usuario en el men´ u. Cuando la configuraci´ on es
+v´ alida y se carga la escena de simulaci´ on, estos valores se leen y se aplican a
+los componentes correspondientes. Esto permite compartir par´ ametros entre
+ambas escenas del simulador.
+Con esta base preparada, el siguiente paso es la preparaci´ on del escenario
+donde se lleva a cabo la simulaci´ on.
+5.2. Desarrollo del escenario tridimensional
+A la hora de crear el escenario 3D sobre el que se lleva a cabo la simulaci´ on,
+en lugar de realizarse sobre un entorno urbano gen´ erico, se decide llevar a
+cabo una recreaci´ on tridimensional del Centro Universitario de M´ erida. Esta
+elecci´ on permite trabajar sobre un escenario realista aprovechando que el
+desarrollo del TFG se realiza en este mismo centro.
+Dentro de esta recreaci´ on, la antena transmisora se sit´ ua en la misma
+zona en la que se encuentra una antena real del centro universitario. De esta
+forma, el escenario no solo sirve como un entorno visual, sino que tambi´ en
+permite analizar la cobertura tomando como referencia una ubicaci´ on realista
+dentro del centro.
+Para recrear las proporciones del Centro Universitario de M´ erida, se uti-
+liza Google Earth como referencia principal [28]. A partir de la vista a´ erea se
+obtienen las proporciones en planta de los edificios, carreteras, zonas verdes
+y el resto de elementos principales. Para estimar las alturas, se toman como
+referencia los valores de elevaci´ on respecto al nivel del mar proporcionados
+45
+
+--- PAGE 57 ---
+por Google Earth, calculando la diferencia entre la altura del suelo y la altura
+aproximada de los techos.
+Esta forma de trabajar tiene algunas limitaciones. Las alturas obtenidas
+desde Google Earth se muestran en metros enteros, por lo que las medidas
+no pueden ser consideradas exactas. Adem´ as, el terreno del campus no es
+completamente plano, lo que introduce peque˜ nas diferencias de altura entre
+distintas zonas del mismo. Por este motivo, la topolog´ ıa del escenario no pre-
+tende ser una reproducci´ on exacta, sino una aproximaci´ on lo suficientemente
+fiel como para utilizarse a modo de base para la simulaci´ on.
+El escenario se modela ´ ıntegramente en Blender. En primer lugar, se crea
+un plano base para representar el terreno del campus. Este plano se divide
+en distintos cuadrados, ajustando la altura de cada zona seg´ un los valores
+de elevaci´ on obtenidos a partir de Google Earth. De esta forma, el terreno
+no queda completamente plano, sino que reproduce de forma aproximada los
+cambios de altura del entorno real.
+Una vez definido el terreno base, se construyen los edificios principales del
+centro. Para ello, se modelan sus vol´ umenes partiendo de la vista en planta
+y alturas de Google Earth. Posteriormente, se a˜ naden el resto de elementos
+como ventanas, puertas, salientes y otros detalles visibles desde el exterior.
+Una vez terminados los edificios, se a˜ naden el resto de elementos del campus,
+como aparcamientos, bancos, vallas o caminos.
+Adem´ as de la informaci´ on obtenida de Google Earth, se realizan foto-
+graf´ ıas del campus desde distintos puntos de vista. Estas im´ agenes no sirven
+como base para realizar el modelo, pero s´ ı como apoyo para cuadrar deta-
+lles que no se aprecian correctamente desde la vista a´ erea, como la altura
+de las ventanas o puertas, las zonas entre edificios o los detalles de algunos
+elementos del escenario.
+En el caso de las alturas de ventanas o puertas, se realiz´ o una aproxima-
+ci´ on realizando una regla de tres sobre las fotograf´ ıas y aplicando las pro-
+porciones obtenidas sobre el modelo 3D. Este m´ etodo no es del todo exacto,
+pues introduce un error debido a la perspectiva de las im´ agenes, pero es una
+soluci´ on razonable al no disponer de planos exteriores detallados del centro.
+Tras finalizar la creaci´ on del modelo, se crearon versiones simplificadas de
+cada edificio usando un estilo low poly. Esto consiste en crear una r´ eplica del
+edificio con una geometr´ ıa m´ as simple. En este proyecto, estas versiones se
+utilizan para las colisiones y la detecci´ on de obst´ aculos, ya que no es necesario
+que tengan todos los detalles visuales del modelo original. Esto es importante
+porque reduce la complejidad de las comprobaciones de colisi´ on y ayuda a
+46
+
+--- PAGE 58 ---
+optimizar el simulador.
+Para mejorar el aspecto visual del modelo, se utilizan texturas externas
+procedentes de webs como ambientCG [29] y Poly Haven [30]. Adem´ as, los
+edificios y la vegetaci´ on que rodean el campus se a˜ naden mediante assets
+descargados de BlenderKit [31]. Estos elementos se utilizan ´ unicamente para
+completar el fondo visual de la escena, por lo que no intervienen en los c´ alculos
+de propagaci´ on ni en la detecci´ on de obst´ aculos.
+En las Figuras 5.1 y 5.2 se muestran los resultados del modelado, com-
+parando im´ agenes reales del Centro Universitario de M´ erida con su versi´ on
+recreada en Blender.
+Figura 5.1: Primera comparaci´ on entre el campus real y el modelo 3D recreado
+47
+
+--- PAGE 59 ---
+Figura 5.2: Segunda comparaci´ on entre el campus real y el modelo 3D recreado
+Una vez finalizado el modelo, se importa en Unity, donde se a˜ naden la
+iluminaci´ on, las sombras y el cielo de la escena. El resultado final del escenario
+integrado en Unity se muestra en la Figura 5.3.
+Figura 5.3: Resultado final del escenario integrado en Unity
+48
+
+--- PAGE 60 ---
+5.3. Reconstrucci´ on del patr´ on de radiaci´ on
+de la antena
+Una vez preparado el escenario en Unity, el siguiente paso consiste en
+definir el comportamiento de la antena transmisora dentro de la simulaci´ on.
+Para ello, se implementa la reconstrucci´ on del patr´ on de radiaci´ on.
+En este proyecto se implementan tres modos: un patr´ on omnidireccional,
+el m´ etodo de Gil y el m´ etodo de Vasiliadis. El m´ etodo utilizado se selecciona
+desde el men´ u de configuraci´ on, lo que permite estudiar y comparar distintos
+patrones de radiaci´ on.
+En el caso de los m´ etodos de Gil y Vasiliadis, la reconstrucci´ on parte de
+un fichero CSV que contiene los cortes horizontal y vertical del patr´ on, junto
+con datos b´ asicos de la antena. A partir de estos cortes, el simulador genera
+una matriz de ganancia tridimensional seg´ un dos ´ angulos: el ´ angulo vertical,
+entre 0 y 180 grados, y el ´ angulo horizontal o azimut, entre 0 y 359 grados.
+Antes de aplicar los m´ etodos de reconstrucci´ on, se deben adaptar los
+datos del CSV de entrada. El fichero original contiene el corte vertical en
+funci´ on de la elevaci´ on, donde la direcci´ on principal del patr´ on se encuentra a
+una elevaci´ on de 0◦. Sin embargo, la matriz utilizada internamente en Unity
+representa el ´ angulo vertical de otra forma: 0 ◦ corresponde a la direcci´ on
+superior, 90 ◦ al plano horizontal de la antena y 180 ◦ a la direcci´ on inferior.
+Por esta diferencia entre referencias, el corte vertical se desplaza 90◦ antes
+de reconstruir el patr´ on tridimensional. De esta forma, el m´ aximo del corte
+vertical queda alineado con el plano del corte horizontal. Adem´ as, ese m´ aximo
+queda centrado dentro del rango vertical utilizado por la matriz, entre 0 ◦
+y 180 ◦, dejando una parte del patr´ on por encima y otra por debajo de la
+direcci´ on principal.
+Esta adaptaci´ on es importante para aplicar correctamente los m´ etodos
+de reconstrucci´ on. En el m´ etodo de Vasiliadis, el corte vertical se utiliza
+dentro del rango de 0 ◦ a 180 ◦, mientras que en el m´ etodo de Gil el patr´ on
+se separa en dos hemisferios respecto al plano horizontal. Si no se realizara
+este desplazamiento, el l´ obulo principal quedar´ ıa en la parte superior de la
+matriz y los cortes horizontal y vertical no estar´ ıan alineados correctamente.
+Esta forma de ajustar los cortes coincide tambi´ en con el criterio utilizado en
+las funciones de reconstrucci´ on de patrones en MATLAB.
+documentaci´ on de matlab no aparece pero, cuando usas la funci´ on
+49
+
+--- PAGE 61 ---
+en matlab, te obliga a tener el m´ aximo en 90º. No s´ e si est´ a bien
+dejarlo as´ ı o mejor quitar la ´ ultima frase ya que no tengo referencia
+en la que apoyarme.
+Despu´ es de alinear los cortes, se preparan los valores que se utilizar´ an en
+la reconstrucci´ on. El CSV proporciona el patr´ on de radiaci´ on como atenua-
+ciones en dB, donde la direcci´ on principal del patr´ on corresponde a la menor
+atenuaci´ on, es decir, 0 dB. A partir de estos valores se obtiene la atenuaci´ on
+relativa de cada direcci´ on.
+A continuaci´ on, las atenuaciones relativas en dB se convierten a escala
+lineal. Con esta conversi´ on, la direcci´ on principal del patr´ on tiene valor 1
+y el resto de direcciones quedan normalizadas entre 0 y 1 seg´ un su atenua-
+ci´ on. Esta representaci´ on lineal normalizada es la que utilizan los m´ etodos
+de reconstrucci´ on para combinar los cortes. Una vez reconstruida la matriz
+tridimensional, los valores obtenidos se convierten de nuevo a dB relativos y
+se suma la ganancia m´ axima indicada en el CSV para obtener la ganancia
+absoluta en dBi de cada direcci´ on.
+El m´ etodo de Gil utiliza los cortes horizontal y vertical para estimar la
+ganancia en cada direcci´ on del espacio. Para ello, se separa el comportamiento
+del plano vertical en una parte frontal y una parte trasera, y se combinan
+los valores disponibles seg´ un la direcci´ on que se quiere reconstruir. De esta
+forma, se obtiene una aproximaci´ on de la ganancia para cada combinaci´ on
+de ´ angulo vertical y ´ angulo horizontal.
+El m´ etodo de Vasiliadis tambi´ en parte de los cortes horizontal y vertical,
+pero combina ambos valores mediante una ponderaci´ on controlada por un
+factorkconfigurable. En la aplicaci´ on, este factor se puede modificar desde
+el men´ u de configuraci´ on cuando se selecciona este m´ etodo. Esto permite
+ajustar c´ omo influyen los cortes horizontal y vertical en la reconstrucci´ on del
+patr´ on.
+Adem´ as de estos dos m´ etodos, se implementa un patr´ on omnidireccio-
+nal. En este caso, el patr´ on no se obtiene desde el CSV, sino que se genera
+mediante una funci´ on basada en el seno del ´ angulo vertical. De esta forma,
+la ganancia es constante en el plano horizontal y var´ ıa ´ unicamente seg´ un
+el ´ angulo vertical. La ganancia m´ axima del patr´ on omnidireccional puede
+configurarse desde el men´ u inicial.
+En el caso del patr´ on omnidireccional, la funci´ on senoidal utilizada hace
+que la ganancia sea 0 en los polos. Para evitar problemas al convertir este
+valor a escala logar´ ıtmica, se utiliza un l´ ımite m´ ınimo de 10−12, equivalente
+a -120 dB. Este valor se mantiene en los c´ alculos internos, pero no se utiliza
+50
+
+--- PAGE 62 ---
+directamente para colorear el patr´ on de radiaci´ on. En la visualizaci´ on, se
+limita el rango a 50 dB por debajo de la ganancia m´ axima, facilitando que las
+diferencias de ganancia sean m´ as visibles en la representaci´ on tridimensional
+del patr´ on.
+Al finalizar la reconstrucci´ on, se generan varias matrices de ganancia. La
+matriz principal es la de ganancia absoluta en dBi, ya que se utiliza para
+calcular la ganancia transmisor-receptor, representar el color del patr´ on y
+exportar el patr´ on reconstruido. Adem´ as, se conserva una matriz en escala
+lineal normalizada, utilizada para la construcci´ on del patr´ on omnidireccio-
+nal tridimensional, y una matriz de ganancia relativa en dB, utilizada para
+pruebas internas de la aplicaci´ on.
+Una vez generada la matriz de ganancia, el patr´ on se representa en Unity
+mediante un objeto tridimensional. Esta visualizaci´ on permite comprobar la
+forma obtenida con cada m´ etodo y comparar las diferencias entre el patr´ on
+omnidireccional, el m´ etodo de Gil y el m´ etodo de Vasiliadis. En la Figura 5.4
+se muestran los tres patrones disponibles en la aplicaci´ on.
+Figura 5.4: Comparaci´ on de los patrones de radiaci´ on implementados
+5.4. Generaci´ on de la rejilla de propagaci´ on
+Una vez reconstruido el patr´ on de radiaci´ on, se genera la rejilla de propa-
+gaci´ on sobre la que se calcula la potencia recibida. Esta rejilla se construye a
+partir de los par´ ametros definidos previamente en el men´ u de configuraci´ on:
+las dimensiones en los ejes X, Y y Z y el tama˜ no de cada voxel.
+A partir de estos valores, el simulador calcula el n´ umero de voxeles nece-
+sario en cada eje. Adem´ as, al realizar dicho c´ alculo, se divide el tama˜ no de la
+51
+
+--- PAGE 63 ---
+rejilla entre el tama˜ no del voxel y el resultado se redondea hacia arriba. De
+esta forma, se garantiza que el volumen configurado quede cubierto por com-
+pleto, aunque las dimensiones elegidas no sean m´ ultiplos exactos del tama˜ no
+del voxel.
+La generaci´ on de la rejilla se realiza usando la antena transmisora como
+referencia. Primero, se obtiene la esquina m´ ınima del volumen en coordenadas
+locales de la antena, y desde esa posici´ on se recorren los tres ejes de la rejilla.
+En cada iteraci´ on, se calcula la posici´ on central del voxel, que ser´ a el punto
+utilizado para realizar los c´ alculos posteriores.
+Despu´ es, la posici´ on central de cada voxel se transforma a coordenadas
+globales de Unity, teniendo en cuenta la posici´ on y la rotaci´ on de la antena.
+De esta forma, la rejilla queda orientada respecto al transmisor.
+Durante todo este proceso, se almacena la informaci´ on b´ asica de cada
+voxel: su ´ ındice, sus coordenadas dentro de la rejilla y su posici´ on en el
+escenario. Adem´ as, para cada voxel se preparan los datos que se enviar´ an
+posteriormente al simulador externo en Python.
+5.5. C´ alculo de ganancias transmisor-receptor
+Tras generar la rejilla de voxeles, se calcula la ganancia de transmisi´ on
+correspondiente a cada punto de la rejilla. Esta ganancia depende del patr´ on
+de radiaci´ on reconstruido anteriormente y de la direcci´ on entre la antena
+transmisora y el punto en cuesti´ on. Para obtener esta direcci´ on, el simulador
+calcula el vector que une la posici´ on del transmisor con el centro de cada
+voxel.
+El vector obtenido se transforma al sistema de coordenadas local de la
+antena. Esto es necesario porque el patr´ on de radiaci´ on est´ a definido respecto
+a la orientaci´ on de la antena, no respecto a los ejes globales de Unity. De esta
+forma, aunque la antena est´ e rotada dentro del escenario, la ganancia se
+calcula teniendo en cuenta esa rotaci´ on.
+A partir de la direcci´ on local entre la antena y el receptor, se obtienen los
+´ angulos vertical y horizontal que definen la direcci´ on de propagaci´ on entre
+ambos. Estos ´ angulos se utilizan para extraer el valor de la ganancia en esa
+direcci´ on de la matriz de ganancias absolutas. El valor obtenido se guarda
+junto con la informaci´ on del voxel para utilizarse posteriormente en el c´ alculo
+de p´ erdidas y potencia recibida.
+Adem´ as de la ganancia de transmisi´ on, tambi´ en se hace uso de la ganancia
+52
+
+--- PAGE 64 ---
+del receptor. En la rejilla de propagaci´ on se utiliza una ganancia de recepci´ on
+de 0 dBi, ya que se busca obtener una referencia general de la cobertura sin
+asociarla a un receptor concreto.
+5.6. C´ alculo de p´ erdidas, potencia recibida y
+SNR
+Una vez preparada la informaci´ on de cada voxel, Unity la env´ ıa al simu-
+lador externo en Python. Este simulador se encarga de calcular las p´ erdidas
+del enlace y la potencia recibida utilizando las funciones ya existentes del
+canal de propagaci´ on.
+Para realizar estos c´ alculos, se utilizan los par´ ametros configurados en
+el men´ u inicial, como la potencia de transmisi´ on, la frecuencia, el ancho de
+banda, el modelo de p´ erdidas, el escenario, el tipo de entorno y las ganancias
+de antena. La aplicaci´ on permite trabajar con modelos como FSPL o ABG,
+dependiendo de la configuraci´ on seleccionada por el usuario.
+El simulador calcula la distancia entre el transmisor y el punto receptor y,
+a partir de esa distancia y del modelo seleccionado, obtiene las p´ erdidas del
+canal. Adem´ as, cuando Unity proporciona una p´ erdida adicional por edificios,
+esta se suma a las p´ erdidas base del modelo de propagaci´ on.
+Con las p´ erdidas totales del enlace, la potencia de transmisi´ on y las ga-
+nancias de antena, el simulador calcula la potencia recibida mediante el pre-
+supuesto de potencia implementado en Python. En la rejilla de propagaci´ on
+se devuelve para cada voxel la distancia, las p´ erdidas y la potencia recibida,
+ya que estos valores son los necesarios para construir el mapa de calor.
+La SNR no se calcula para la rejilla de propagaci´ on, ya que el mapa de
+calor busca representar una referencia general de la potencia recibida en el
+escenario, sin asociarla a un tipo de comunicaci´ on concreto ni a un ancho
+de banda espec´ ıfico. En cambio, en los receptores m´ oviles s´ ı se calcula esta
+m´ etrica, ya que representan casos concretos de comunicaci´ on, como recep-
+tores celulares 5G o V2X. Para obtenerla, se utiliza la funci´ on de SINR del
+simulador externo, introduciendo las interferencias con valor cero, ya que en
+este proyecto solo se utiliza un transmisor.
+53
+
+--- PAGE 65 ---
+5.7. Detecci´ on de obst´ aculos y p´ erdidas por
+edificios
+Para tener en cuenta la presencia de edificios entre el transmisor y los
+receptores, se implementa un sistema de detecci´ on de obst´ aculos en Unity.
+Este sistema permite a˜ nadir una p´ erdida adicional cuando la se˜ nal atraviesa
+edificios antes de llegar al receptor en cuesti´ on.
+Para ello, adem´ as del modelo del escenario, se crean en Blender versiones
+simplificadas de los edificios destinadas ´ unicamente a las colisiones. En Unity,
+un collider es el volumen que se utiliza para detectar contactos o interseccio-
+nes con otros objetos, aunque no tiene por qu´ e coincidir exactamente con la
+geometr´ ıa del modelo. En este caso, los colliders de los edificios se utilizan
+para saber si la l´ ınea entre el transmisor y el receptor atraviesa alg´ un edificio.
+Estas versiones de colisi´ on tienen una geometr´ ıa m´ as simple que repre-
+senta el volumen de cada edificio. En edificios con formas m´ as complejas,
+como el aulario, el modelo se divide en varias piezas. Esto es fundamental
+porque, si todo el edificio se representara como un ´ unico collider, un rayo
+que atravesara varias zonas del mismo edificio se contabilizar´ ıa como una
+´ unica colisi´ on. Al dividirlo en prismas rectangulares, se consigue detectar los
+distintos tramos atravesados por la se˜ nal.
+La detecci´ on se realiza mediante raycasting. Para cada punto receptor,
+se construye el segmento que une la antena transmisora con dicho punto. A
+continuaci´ on, Unity lanza un rayo sobre ese segmento y obtiene los colliders
+de edificios que son atravesados. Todos estos colliders est´ an etiquetados como
+edificios, de forma que no se tienen en cuenta otros elementos visuales del
+escenario.
+Sin embargo, al dividir un edificio en varios prismas puede aparecer un
+problema adicional. Un mismo tramo atravesado por la se˜ nal puede pasar
+por varios colliders consecutivos que forman parte del mismo edificio o de
+una misma zona continua. Si se contara cada impacto del rayo por separado,
+se podr´ ıan a˜ nadir m´ as p´ erdidas de las que corresponden. Por este motivo,
+se implementa un algoritmo que no se basa ´ unicamente en el n´ umero de
+impactos detectados, sino en los tramos reales atravesados por la se˜ nal. El
+algoritmo implementado se muestra a continuaci´ on:
+54
+
+--- PAGE 66 ---
+Algoritmo 1:C´ alculo de colisiones con edificios
+Entrada:Posici´ on del transmisor y posici´ on del receptor
+Salida:N´ umero de colisiones con edificios
+1Crear el segmento transmisor-receptor
+2Obtener mediante raycasting los colliders de edificios atravesados
+3Inicializar la lista de tramos ocupados por edificios
+4paracada collider atravesadohacer
+5Calcular el punto de entrada del rayo en el collider
+6Calcular el punto de salida del rayo en el collider
+7Guardar el tramo ocupado por ese collider dentro del segmento
+8fin para
+9Ordenar los tramos ocupados seg´ un su distancia al transmisor
+10Fusionar los tramos solapados o consecutivos
+11Calcular el n´ umero de colisiones con edificios a partir de los tramos
+resultantes
+12returncolisiones
+El algoritmo calcula, para cada collider atravesado, el tramo del segmento
+transmisor-receptor que queda dentro del edificio. Para ello, se lanza un rayo
+desde el transmisor hacia el receptor para obtener el punto de entrada y otro
+desde el receptor hacia el transmisor para obtener el punto de salida. Con
+ambos puntos se define el tramo ocupado por ese collider.
+Una vez obtenidos todos los tramos ocupados, estos se ordenan y se fu-
+sionan cuando se solapan o est´ an conectados. De esta forma, varios colliders
+consecutivos que representan una misma zona atravesada se interpretan co-
+mo un ´ unico tramo real. Cada tramo continuo se cuenta como una entrada y
+una salida del edificio, por lo que normalmente equivale a dos colisiones con
+edificios. Si el punto receptor queda dentro del edificio, se elimina la colisi´ on
+de salida, ya que la se˜ nal entra en el edificio pero no llega a salir antes de
+alcanzar el receptor.
+La p´ erdida adicional por edificios se calcula multiplicando el n´ umero de
+colisiones por una p´ erdida fija por pared. Para esta p´ erdida se utiliza como
+referencia la especificaci´ on ETSI TR 138 901, que contiene las p´ erdidas por
+penetraci´ on de distintos materiales. En el caso del hormig´ on, la p´ erdida se
+calcula comoL concrete = 5 + 4fdB, asumiendo un grosor de 23 cm y siendo
+fla frecuencia en GHz [15].
+En este proyecto se considera que los edificios del escenario son construc-
+ciones de hormig´ on, por lo que se aplica la expresi´ on anterior para estimar
+55
+
+--- PAGE 67 ---
+la p´ erdida a˜ nadida por cada colisi´ on.
+Finalmente, esta p´ erdida se suma a las p´ erdidas obtenidas mediante el
+modelo de propagaci´ on seleccionado. De esta forma, el c´ alculo de potencia
+recibida no depende ´ unicamente de la distancia y del modelo de canal, sino
+tambi´ en de si la se˜ nal atraviesa edificios dentro del escenario tridimensional.
+5.8. Mapa de calor 3D y 2D
+Una vez recibidos los resultados calculados por Python, Unity construye
+la representaci´ on gr´ afica correspondiente a la rejilla de potencia recibida.
+Para ello, se utiliza el valor de potencia recibida de cada voxel y se normaliza
+utilizando los valores m´ ınimo y m´ aximo obtenidos.
+Aunque cada voxel se visualiza como un peque˜ no cubo dentro del mapa
+de calor 3D, no se crea un objeto independiente para cada uno de ellos. Tener
+un objeto por cada voxel significar´ ıa generar una gran cantidad de objetos
+en la escena, lo que afectar´ ıa notablemente al rendimiento.
+Para mejorar el rendimiento ante un gran n´ umero de voxeles, se agrupan
+en bloques o chunks. Cada chunk est´ a formado por un conjunto de voxe-
+les cercanos dentro de la rejilla y se representa mediante una ´ unica malla
+asignada a un solo objeto. En el contexto de los modelos 3D, una malla es
+una estructura formada por v´ ertices, aristas y caras, que permite representar
+objetos tridimensionales. De esta forma, se reduce el n´ umero de objetos que
+Unity debe manejar y se mejora el rendimiento. La malla de cada chunk se
+construye a partir de los cubos visibles que forman parte de ese bloque.
+Cada voxel visible se representa como un cubo centrado en la posici´ on
+calculada durante la generaci´ on de la rejilla. El color se obtiene a partir de
+la potencia recibida normalizada, utilizando tonos m´ as cercanos al rojo para
+valores altos y tonos m´ as cercanos al negro para valores bajos. Adem´ as del
+color, se calcula una transparencia para cada voxel a partir de los par´ ametros
+configurados por el usuario.
+La transparencia final se obtiene a partir de la transparencia m´ ınima, la
+transparencia m´ axima y el exponente de transparencia. Estos valores permi-
+ten modificar la opacidad de cada voxel seg´ un su potencia recibida, haciendo
+menos visibles las zonas de baja potencia y destacando las regiones con mayor
+se˜ nal.
+El umbral de visualizaci´ on se aplica sobre la potencia recibida normali-
+zada. Los voxeles cuyo valor queda por debajo del umbral seleccionado no se
+56
+
+--- PAGE 68 ---
+incluyen en la malla final, por lo que dejan de mostrarse en el mapa de calor.
+Cuando el usuario modifica el slider de umbral, el valor se muestra tambi´ en
+en dBm y, al soltar el control, se reconstruyen los chunks visibles del mapa.
+En la Figura 5.5 se muestra un ejemplo del mapa de calor 3D saturado por
+un exceso de voxeles y a su lado el mismo mapa con el umbral aplicado.
+Figura 5.5: Mapa de calor 3D con umbral de visualizaci´ on aplicado
+Adem´ as del mapa 3D, se implementa una versi´ on 2D por capas. Esta
+vista utiliza los mismos datos de la rejilla, pero muestra ´ unicamente los vo-
+xeles pertenecientes a una altura concreta. El usuario puede seleccionar la
+capa mediante un slider, y la textura del mapa se actualiza para mostrar la
+distribuci´ on de potencia recibida a esa altura.
+Para generar el mapa 2D, se crea una textura sobre la que se pintan los
+voxeles de la capa seleccionada. Cada voxel se proyecta sobre el plano del
+mapa y se colorea seg´ un su potencia recibida normalizada. Como la rejilla
+puede estar rotada respecto al escenario, se calculan las esquinas del voxel
+en el plano 2D y se rellena el ´ area de p´ ıxeles correspondiente.
+Para evitar huecos visuales debidos al redondeo, se utiliza redondeo hacia
+abajo en los valores m´ ınimos y redondeo hacia arriba en los valores m´ aximos
+del ´ area ocupada. Esta soluci´ on evita que queden espacios vac´ ıos entre voxeles
+debido al redondeo, aunque puede producir dientes de sierra en el minimapa
+2D cuando el tama˜ no de voxel utilizado es grande.
+La vista 2D se genera a partir de una c´ amara ortogr´ afica situada sobre el
+campus, que muestra una vista cenital del escenario. Para definir qu´ e zona del
+escenario debe aparecer en esta imagen se utilizan dos puntos de referencia
+colocados en la escena, que marcan los l´ ımites del mapa. A partir de esos
+mismos l´ ımites, las posiciones de los v´ oxeles en coordenadas del mundo se
+convierten a coordenadas de p´ ıxel, permitiendo dibujar el mapa de calor
+exactamente sobre la zona correspondiente de la imagen cenital. De esta
+forma, el usuario puede relacionar la distribuci´ on de potencia recibida con
+57
+
+--- PAGE 69 ---
+los edificios, caminos y zonas del entorno. En la Figura 5.6 se muestra un
+ejemplo del mapa de calor 2D por capas.
+Figura 5.6: Mapa de calor 2D por capas
+5.9. Receptores m´ oviles, rutas y m´ etricas
+Los receptores se desplazan por el escenario siguiendo rutas definidas
+previamente mediante puntos colocados en Unity. Cada ruta representa un
+tipo de recorrido diferente dentro del campus. De esta forma, la simulaci´ on no
+solo calcula la cobertura en puntos fijos, sino que tambi´ en permite estudiar
+c´ omo var´ ıa la se˜ nal durante un recorrido.
+En este trabajo se utilizan tres receptores m´ oviles: un veh´ ıculo que recorre
+el campus, un veh´ ıculo con un recorrido lineal hacia la antena y un peat´ on.
+Al disponer de varios recorridos distintos, se pueden observar diferentes si-
+tuaciones dentro del mismo escenario. El veh´ ıculo del campus representa un
+desplazamiento completo por todo el campus, el veh´ ıculo lineal permite ana-
+lizar la evoluci´ on de la se˜ nal de forma lineal, y el peat´ on representa un caso
+de movimiento de un dispositivo 5G dentro del propio campus.
+Cada receptor tiene asociada una ruta y una velocidad de movimiento
+en m/s. Durante la simulaci´ on, el receptor avanza de un punto de la ruta al
+siguiente. Al llegar a un punto, contin´ ua hacia el siguiente hasta completar
+el recorrido. En el caso del veh´ ıculo del campus y el peat´ on, ambos realizan
+su ruta en bucle de forma ilimitada. No obstante, el veh´ ıculo lineal se detiene
+al llegar al final y se queda estacionado.
+Los receptores tambi´ en utilizan una ganancia de recepci´ on configurable
+desde el men´ u inicial. Los veh´ ıculos emplean la ganancia definida para re-
+ceptores vehiculares, mientras que el peat´ on utiliza la ganancia definida para
+receptores celulares. De esta forma, los valores pueden modificarse en funci´ on
+del caso que se quiera estudiar.
+58
+
+--- PAGE 70 ---
+El movimiento de los receptores no comienza nada m´ as cargar la escena.
+Antes de activarlos, el simulador espera a que se haya generado la rejilla de
+propagaci´ on y a que el servidor Python est´ e preparado para recibir peticiones.
+De esta forma, se evita que los receptores empiecen a recorrer la escena antes
+de que puedan calcular sus m´ etricas.
+Una vez que el sistema est´ a preparado, se activa el movimiento de los
+receptores y comienza el registro de muestras. Durante el recorrido, Unity
+solicita peri´ odicamente al servidor Python las m´ etricas de cada receptor a
+partir de su posici´ on actual. En la escena, esta actualizaci´ on se realiza cada
+0,05 segundos, por lo que se obtiene una secuencia de valores de potencia
+recibida, SNR, distancia al transmisor y p´ erdidas del enlace.
+El registro de datos se detiene cuando el receptor completa su primer
+recorrido. Esto evita mezclar varias vueltas en una misma gr´ afica, ya que
+los datos ser´ ıan equivalentes. Si la simulaci´ on se interrumpe antes de que
+un receptor termine su ruta, se exportan las muestras registradas hasta ese
+momento, evitando que se pierdan los datos obtenidos.
+5.10. Paneles de m´ etricas y visualizaci´ on de
+cobertura
+Los receptores m´ oviles cuentan con paneles de m´ etricas que muestran los
+valores calculados durante la simulaci´ on. Con cada nueva respuesta recibida
+desde Python se actualizan los valores mostrados en la interfaz, como la
+distancia al transmisor, la potencia recibida, la SNR, las p´ erdidas del enlace
+y el n´ umero de colisiones con edificios.
+Junto con el panel de m´ etricas, se implementa un visualizador de cober-
+tura asociado a cada receptor m´ ovil. Este visualizador muestra el estado de
+la cobertura a partir de la SNR obtenida en cada actualizaci´ on. A prime-
+ra vista, podr´ ıa pensarse que el ´ unico umbral necesario es 0 dB, ya que la
+SNR representa la relaci´ on entre la potencia de se˜ nal y el ruido. En escala
+logar´ ıtmica, una SNR de 0 dB indica que la potencia de se˜ nal y la potencia
+de ruido son iguales, mientras que valores positivos indican que la se˜ nal est´ a
+por encima del ruido.
+Sin embargo, para representar la calidad de cobertura de forma m´ as ´ util,
+no basta con distinguir ´ unicamente entre valores positivos y negativos. Por
+este motivo, se busc´ o una referencia orientativa que permitiera separar distin-
+tos niveles de calidad de se˜ nal. La documentaci´ on de Cisco sobre resoluci´ on
+59
+
+--- PAGE 71 ---
+de problemas en interfaces celulares proporciona una tabla con rangos de
+calidad para RSSI, RSRP, RSRQ y SNR [32]. A partir de esa tabla se toman
+como referencia los l´ ımites de SNR de 20 dB, 13 dB y 0 dB.
+Con estos umbrales se definen cuatro estados de cobertura: excelente para
+valores de SNR mayores o iguales que 20 dB, buena para valores entre 13 dB y
+20 dB, aceptable para valores entre 0 dB y 13 dB, e insuficiente para valores
+menores que 0 dB. Estos l´ ımites no se interpretan como norma absoluta,
+sino que se utilizan como criterio visual para facilitar la interpretaci´ on de la
+cobertura durante la simulaci´ on.
+El visualizador de cobertura est´ a formado por un mensaje sobre el re-
+ceptor y un indicador circular en el suelo. Cada vez que se reciben nuevas
+m´ etricas, el sistema actualiza el texto y el color del indicador seg´ un el estado
+de cobertura calculado. De esta forma, el usuario puede identificar r´ apida-
+mente la calidad del enlace sin depender ´ unicamente del panel num´ erico.
+5.11. Generaci´ on autom´ atica de CSV y gr´ afi-
+cas
+La generaci´ on de resultados se realiza durante la ejecuci´ on de la simula-
+ci´ on. Cada receptor m´ ovil tiene una lista con las muestras obtenidas durante
+su recorrido. De esta forma, los datos de los receptores no se mezclan entre
+s´ ı y pueden exportarse de manera separada.
+El registro de muestras comienza cuando la escena ya est´ a preparada y
+los receptores empiezan a desplazarse. Cada vez que se reciben nuevas m´ etri-
+cas desde el simulador Python, se guarda una muestra asociada al receptor
+correspondiente.
+Cuando un receptor completa su primer recorrido, se exportan las mues-
+tras almacenadas en un archivo CSV. Cada archivo contiene una cabecera
+con el nombre de las columnas y una fila por cada muestra registrada. Es-
+te archivo utiliza la coma como separador entre columnas y el punto como
+separador decimal. Adem´ as, los valores reales se guardan con tres decimales
+para facilitar su procesado posterior.
+Una vez exportado el CSV de un receptor, se generan autom´ aticamente
+las gr´ aficas seleccionadas por el usuario en el men´ u de configuraci´ on. Para
+ello se utiliza el entorno Python integrado, que lee los datos exportados y
+crea las im´ agenes correspondientes en la misma carpeta de resultados.
+Las gr´ aficas generadas permiten analizar la potencia recibida y la SNR
+60
+
+--- PAGE 72 ---
+respecto a la distancia al transmisor, adem´ as de la evoluci´ on de la SNR
+respecto al tiempo. En esta ´ ultima se a˜ naden las l´ ıneas de los umbrales confi-
+gurados y se calcula el porcentaje de tiempo en el que el receptor se mantiene
+por encima del l´ ımite de cobertura.
+Adem´ as de exportar los resultados cuando un receptor completa su reco-
+rrido, la aplicaci´ on tambi´ en tiene en cuenta el caso en el que la simulaci´ on se
+interrumpa antes de terminar. Si el usuario vuelve al men´ u o cierra la apli-
+caci´ on, se exportan igualmente las muestras disponibles hasta ese momento,
+evitando que se pierdan los datos ya registrados.
+5.12. Optimizaci´ on y modos de rendimiento
+Durante el desarrollo del simulador, se a˜ naden varias medidas para adap-
+tar la aplicaci´ on a equipos con distintas capacidades. La escena principal est´ a
+formada por un modelo tridimensional del campus, mapas de calor, recep-
+tores m´ oviles, paneles de interfaz y comunicaci´ on peri´ odica con el servidor
+Python, por lo que el rendimiento puede variar bastante seg´ un el ordenador
+utilizado.
+Adem´ as de las optimizaciones de la representaci´ on del mapa de calor
+explicadas anteriormente, se a˜ nadieron modos de rendimiento configurables
+desde la interfaz. Estos modos permiten activar o desactivar elementos secun-
+darios del escenario. En el modo de bajo rendimiento, se muestra el escenario
+completo. En el modo intermedio se oculta la vegetaci´ on, y en el modo de
+mayor rendimiento se ocultan la vegetaci´ on, el parque y los edificios de fondo.
+Estos elementos mejoran el aspecto visual de la escena, pero no intervie-
+nen en los c´ alculos de propagaci´ on. Por este motivo, pueden desactivarse sin
+modificar los resultados de la simulaci´ on. De esta forma, el usuario puede re-
+ducir la carga gr´ afica cuando el dispositivo no sea capaz de ejecutar la escena
+con fluidez.
+Otra medida aplicada es la limitaci´ on de los fotogramas por segundo
+(FPS). Sin esta limitaci´ on, la aplicaci´ on intenta generar el mayor n´ umero
+de FPS posible, aumentando innecesariamente el uso de CPU y GPU. Para
+evitarlo, se establece un l´ ımite en funci´ on de la frecuencia de refresco del
+monitor, pero sin superar los 120 FPS.
+Con esta soluci´ on, en un monitor de 60 Hz, la aplicaci´ on se limita a 60
+FPS; mientras que en monitores de mayor frecuencia se permite una tasa
+superior, hasta un m´ aximo de 120 FPS. Esto evita fijar la aplicaci´ on a 60
+FPS, lo que podr´ ıa desaprovechar la fluidez de los monitores actuales, pero
+61
+
+--- PAGE 73 ---
+tambi´ en impide que la simulaci´ on consuma recursos excesivos intentando
+alcanzar tasas de fotogramas demasiado altas.
+62
+
+--- PAGE 74 ---
+Cap´ ıtulo 6
+Pruebas y resultados
+En este cap´ ıtulo se presentan las pruebas realizadas para comprobar el
+funcionamiento del simulador y analizar los resultados obtenidos en distintos
+casos de estudio.
+6.1. Escenario de pruebas
+Las pruebas se realizan sobre el escenario tridimensional del Centro Uni-
+versitario de M´ erida descrito en cap´ ıtulos anteriores. La antena transmisora
+se mantiene en la parte superior del edificio administrativo, siguiendo la ubi-
+caci´ on real tomada como referencia.
+La configuraci´ on mostrada en la Tabla 6.1 se utiliza como caso base para el
+resto de pruebas. A partir de ella, se modifican algunos par´ ametros concretos,
+como el m´ etodo de reconstrucci´ on del patr´ on de radiaci´ on, el valor de k en
+el m´ etodo de Vasiliadis y la potencia de transmisi´ on.
+63
+
+--- PAGE 75 ---
+Par´ ametro Valor
+M´ etodo de reconstrucci´ onVasiliadis, k = 2
+Potencia del transmisor30 dBm
+Frecuencia1,785 GHz
+Ancho de banda10 MHz
+Modelo de p´ erdidasFSPL
+ShadowingDesactivado
+Tama~ no de la rejilla300x40x400 (m)
+Tama~ no del v´ oxel2 m
+Ganancia receptores vehiculares3 dBi
+Ganancia receptor celular0 dBi
+Tabla 6.1: Par´ ametros de prueba
+La antena utilizada en el simulador es el modelo HWXX-6516DS1-VTM
+de Andrew. Seg´ un su ficha t´ ecnica, la antena trabaja en varias bandas dentro
+del rango de 1710 a 2690 MHz y admite una potencia m´ axima de 350 W por
+puerto [33]. Esta potencia m´ axima equivale aproximadamente a:
+Ptx(dBm) = 10 log10(350000)≈55,44 dBm
+En las pruebas no se utiliza la potencia m´ axima admitida por la antena,
+ya que este valor representa el l´ ımite f´ ısico que puede soportar el puerto de
+entrada y no una potencia habitual. En su lugar, se utiliza una potencia de
+transmisi´ on de 30 dBm, equivalente a 1 W, como caso base para el escenario
+del campus. Este valor es inferior al l´ ımite indicado para una estaci´ on base
+de rango medio en ETSI TS 138 104, donde se define para las estaciones de
+rango medio una potencia menor o igual a 38 dBm [34]. Adem´ as, al estar
+muy por debajo de los 350 W por puerto indicados en la ficha t´ ecnica, el
+valor seleccionado queda dentro del margen soportado por la antena.
+La frecuencia seleccionada es 1,785 GHz. En la p´ agina del fabricante
+se encuentran disponibles distintos ficheros CSV con patrones de radiaci´ on
+medidos para varias frecuencias de operaci´ on de la antena [6]. En el simulador
+se utiliza el fichero correspondiente a 1,785 GHz. De esta forma, la frecuencia
+utilizada en los c´ alculos coincide con la frecuencia del patr´ on de radiaci´ on
+reconstruido.
+El ancho de banda para todos los receptores es de 10 MHz. Este valor
+64
+
+--- PAGE 76 ---
+aparece tanto en las configuraciones de canal de 5G NR en FR1 [34] como en
+comunicaciones vehiculares V2X [35]. Como ambos casos pueden utilizar este
+ancho de banda, se ha utilizado el mismo valor para los receptores celulares
+y vehiculares, evitando diferentes anchos de banda en cada tipo de receptor.
+Como modelo de p´ erdidas se utiliza FSPL. Se ha elegido este modelo
+como base para hacer todas las pruebas porque representa la propagaci´ on en
+espacio libre y permite comprobar los resultados de forma sencilla mediante
+f´ ormulas te´ oricas.
+El shadowing se desactiva en la configuraci´ on para garantizar que las si-
+mulaciones sean reproducibles. Al eliminar la componente aleatoria, dos eje-
+cuciones con los mismos par´ ametros producen los mismos resultados, lo que
+facilita la validaci´ on del simulador y la comparaci´ on entre configuraciones.
+La rejilla de simulaci´ on tiene un tama˜ no de 300×40×400 m. Estas
+dimensiones son las m´ ınimas para cubrir el campus al completo y poder
+analizar el mapa de calor en todo el escenario. Debido al gran tama˜ no de
+la rejilla, se utiliza un tama˜ no de v´ oxel de 2 m, ya que en caso de ser m´ as
+peque˜ no el tama˜ no de muestras ser´ ıa excesivo para un ordenador de uso
+personal. En las pruebas donde se comparan mapas de calor a la altura del
+suelo se aumenta el alto de la rejilla de 40 a 50 para tener un margen m´ as
+amplio.
+En los receptores vehiculares se emplea una ganancia de 3 dBi, tomando
+como referencia los supuestos de simulaci´ on utilizados en estudios V2X de
+3GPP [36]. Para el receptor celular se utiliza una ganancia de 0 dBi para
+modelarlo como un terminal de usuario gen´ erico. Este valor se toma como
+referencia a partir de ETSI TR 136 942 [37].
+A partir de este caso base, se analizan variaciones seg´ un el patr´ on de ra-
+diaci´ on y la potencia de transmisi´ on, observando su impacto sobre la potencia
+recibida, la SNR y la cobertura obtenida en el campus.
+6.2. Validaci´ on del patr´ on de radiaci´ on re-
+construido
+Antes de utilizar el patr´ on de radiaci´ on en los c´ alculos de propagaci´ on, se
+realiza una prueba para comprobar que la reconstrucci´ on implementada en
+Unity se ha realizado correctamente.
+Para realizar esta comprobaci´ on, se crearon bolas de debug dentro del
+simulador. Estas bolas se sit´ uan en el centro de cada v´ oxel de la rejilla y se
+65
+
+--- PAGE 77 ---
+utilizan ´ unicamente durante las pruebas internas de desarrollo, por lo que el
+usuario final desconocer´ a su existencia. Su objetivo es permitir la inspecci´ on
+de los valores calculados en puntos concretos del escenario y comprobar que
+la reconstrucci´ on del patr´ on de radiaci´ on funciona correctamente.
+En la Figura 6.1 se muestra un ejemplo de estas bolas de debug colocadas
+sobre la rejilla de simulaci´ on. Cada bola representa un punto de la rejilla que
+puede seleccionarse para consultar los valores calculados en esa posici´ on.
+Figura 6.1: Bolas de debug utilizadas para inspeccionar valores de la rejilla
+Al hacer clic en una de estas bolas, el simulador muestra la informaci´ on
+asociada a ese v´ oxel. Adem´ as, durante la generaci´ on de la rejilla, Unity mues-
+tra por consola un mensaje con el ´ ındice de cada bola y los ´ angulos theta y
+phi correspondientes a la direcci´ on entre la antena y ese punto. Esta informa-
+ci´ on permite realizar dos comprobaciones: por un lado, validar el c´ alculo de
+potencia recibida mediante el presupuesto de potencias y, por otro, compro-
+bar que la ganancia del patr´ on de radiaci´ on se obtiene correctamente para
+esa direcci´ on.
+En primer lugar, se verifica el c´ alculo de potencia recibida en un punto
+concreto. Para ello, se utiliza la bola de debug de la Figura 6.1, cuyo panel
+muestra una potencia recibida de 7,14 dBm. Al tratarse de una prueba con
+el modelo FSPL y sin shadowing, este valor puede comprobarse f´ acilmente
+mediante la expresi´ on de p´ erdidas en espacio de la recomendaci´ on ITU sobre
+p´ erdidas en espacio libre [16]:
+66
+
+--- PAGE 78 ---
+LFSPL(dB) = 20 log10
+4πd f
+c
+
+dondedes la distancia entre el transmisor y el receptor en metros,fes la
+frecuencia en Hz yces la velocidad de la luz en m/s. A partir de esta p´ erdida,
+la potencia recibida se obtiene mediante el presupuesto de potencias:
+Prx =P tx +G tx +G rx −L FSPL −L edificios
+Para el punto seleccionado, el simulador muestra una distancia de 0,95
+m, una ganancia de transmisi´ on de 14,20 dBi, una ganancia de recepci´ on de
+0 dBi y cero colisiones con edificios. Por tanto, las p´ erdidas adicionales por
+edificios son 0 dB. Sustituyendo estos valores:
+LFSPL = 20 log10
+4π·0,95·1,785·10 9
+3·10 8
+
+= 37,05 dB
+Prx = 30 + 14,20 + 0−37,05−0 = 7,15 dBm
+Este valor coincide con el mostrado en la bola de debug, donde se obtiene
+una potencia recibida de 7,14 dBm. Esta comprobaci´ on permite verificar
+que el c´ alculo de p´ erdidas y el presupuesto de potencias se est´ an aplicando
+correctamente.
+Una vez comprobado el c´ alculo de potencia recibida, se validan las ga-
+nancias del patr´ on de radiaci´ on. Para ello, se utilizan los ´ angulos theta y
+phi asociados a cada bola de debug y se comparan con una reconstrucci´ on
+equivalente realizada en MATLAB mediante la funci´ onpatternFromSlices
+[38]. As´ ı, para cada bola seleccionada, se compara la ganancia calculada por
+Unity con la ganancia obtenida en MATLAB para el mismo par de ´ angulos.
+La comparaci´ on se realiz´ o utilizando el m´ etodo de Vasiliadis con dos va-
+lores distintos del par´ ametrok. Por un lado, se realizaron pruebas conk= 1
+para observar el comportamiento de la reconstrucci´ on con una ponderaci´ on
+m´ as suave. Por otro lado, conk= 2, que es el valor utilizado como configu-
+raci´ on base en el resto de pruebas del simulador.
+En la Tabla 6.2 se muestran los valores obtenidos para distintos pares de
+´ angulos. Para cada direcci´ on se incluye la ganancia calculada en MATLAB
+y los valores obtenidos en Unity con Vasiliadis parak= 1 yk= 2.
+67
+
+--- PAGE 79 ---
+θ ϕMATLAB (dBi) Unityk= 1(dBi) Unityk= 2(dBi)
+90 25 14,25 14,25 14,25
+90 68 6,80 6,80 6,80
+90 180 -18,82 -18,82 -18,82
+135 0 3,71 3,70 -3,71
+87 3 14,20 14,34 14,20
+48 245 -15,77 -7,38 -15,77
+93 165 -19,89 -19,88 -19,89
+138 315 0,63 -1,30 0,63
+72 65 -10,37 -9,97 -10,37
+168 198 -28,03 -14,97 -28,03
+Tabla 6.2: Comparaci´ on de ganancias del patr´ on reconstruido
+Los resultados muestran que los valores obtenidos en Unity con el m´ eto-
+do de Vasiliadis yk= 2 coinciden con los obtenidos en MATLAB para los
+´ angulos analizados. Esto confirma que la implementaci´ on utilizada en el si-
+mulador reproduce correctamente la reconstrucci´ on tomada como referencia.
+En cambio, al utilizark= 1 se obtiene un rango de ganancias m´ as reduci-
+do entre los valores m´ aximos y m´ ınimos, por lo que el patr´ on reconstruido
+presenta variaciones m´ as leves. Por este motivo, se utilizak= 2 como valor
+base en el resto de pruebas.
+Adem´ as, los primeros ´ angulos de la tabla son direcciones pertenecientes
+a los cortes horizontal y vertical del fichero CSV original, por lo que no
+dependen de la reconstrucci´ on. Estos casos sirven como comprobaci´ on de
+que la lectura del fichero de antena y la conversi´ on de ´ angulos utilizada en
+Unity son correctas. Los valores obtenidos coinciden con los del CSV original,
+lo que confirma que el simulador funciona correctamente.
+En la Figura 6.2 se muestra visualmente la comparaci´ on entre el patr´ on
+reconstruido en Unity mediante el m´ etodo de Vasiliadis conk= 2 y el patr´ on
+obtenido en MATLAB. En ambos casos se aprecia una forma muy similar
+del l´ obulo principal y de las zonas de menor ganancia, lo que confirma que la
+reconstrucci´ on no solo coincide en los puntos num´ ericos comprobados, sino
+tambi´ en en la forma general del patr´ on tridimensional.
+68
+
+--- PAGE 80 ---
+Figura 6.2: Comparaci´ on del patr´ on reconstruido con el de MATLAB
+Esta prueba tambi´ en permite validar que la conversi´ on entre posiciones
+del escenario y ´ angulos del patr´ on se realiza correctamente. Por tanto, el
+patr´ on reconstruido puede utilizarse posteriormente en los c´ alculos de pro-
+pagaci´ on, ya que el simulador es capaz de obtener la ganancia de transmisi´ on
+correspondiente a cada direcci´ on del espacio.
+6.3. Resultados rejilla de propagaci´ on
+En esta secci´ on se muestran los resultados obtenidos al calcular la rejilla
+tridimensional de v´ oxeles. En primer lugar, se representa una rejilla reducida
+de 50×40×50 m, ya que este tama˜ no permite apreciar con claridad la
+distribuci´ on de la potencia recibida alrededor de la antena. Al ser el n´ umero
+total de v´ oxeles muy reducido, se puede apreciar f´ acilmente sin necesidad de
+utilizar el umbral o el mapa en dos dimensiones.
+En la Figura 6.3 se puede ver c´ omo la potencia recibida no se distribuye
+de forma uniforme en todas las direcciones. Las zonas con mayor intensidad
+de rojo se corresponden con las zonas de mayor potencia recibida, mientras
+que las zonas m´ as alejadas o en direcciones de bajas ganancias en el patr´ on
+de radiaci´ on tienen valores m´ as oscuros y transparentes.
+69
+
+--- PAGE 81 ---
+Figura 6.3: Mapa de calor 3D para una rejilla reducida de 50×40×50 m
+Sin embargo, cuando se utiliza la rejilla del caso base para cubrir todo el
+campus, la visualizaci´ on tridimensional contiene un n´ umero mucho mayor de
+v´ oxeles. En este caso, aunque el resultado sigue siendo ´ util para observar la
+cobertura general, la densidad de puntos dificulta la interpretaci´ on directa
+del mapa completo.
+Como se observa en la Figura 6.4, al representar todo el campus, el n´ umero
+de v´ oxeles aumenta considerablemente y la visualizaci´ on resulta imposible
+de analizar. Por este motivo, en la siguiente representaci´ on se hace uso del
+umbral de visualizaci´ on, ocultando los v´ oxeles con menor potencia recibida
+y manteniendo visibles ´ unicamente las zonas con valores m´ as altos.
+70
+
+--- PAGE 82 ---
+Figura 6.4: Mapa de calor 3D para la rejilla completa del campus
+En la Figura 6.5 se muestra c´ omo el uso del umbral facilita la visualiza-
+ci´ on de las zonas con mayor potencia recibida. Esta representaci´ on permite
+distinguir con mayor claridad las regiones principales de cobertura, especial-
+mente alrededor de la antena y en las direcciones donde el patr´ on de radiaci´ on
+presenta una mayor ganancia.
+Figura 6.5: Mapa de calor 3D de la rejilla completa aplicando umbral de visualizaci´ on
+71
+
+--- PAGE 83 ---
+Adem´ as de la representaci´ on tridimensional, se utiliza el mapa de calor
+2D por capas para estudiar la cobertura en planos horizontales concretos.
+Esta vista es muy pr´ actica para analizar la rejilla completa, ya que permite
+estudiar el comportamiento de la se˜ nal a una altura determinada evitando el
+problema de la superposici´ on de v´ oxeles.
+En la Figura 6.6 se aprecia con mayor detalle la distribuci´ on de potencia
+recibida sobre el campus. Las zonas pr´ oximas a la antena y con trayecto-
+rias m´ as despejadas presentan valores m´ as altos, mientras que alrededor de
+algunos edificios se observa una reducci´ on notable de la potencia. Esta dismi-
+nuci´ on se debe a las p´ erdidas adicionales introducidas cuando la trayectoria
+entre el transmisor y el punto receptor atraviesa los colliders de los edificios.
+Figura 6.6: Mapa de calor 2D por capas sobre el escenario del campus
+Este comportamiento confirma que el mapa de calor no depende ´ unica-
+mente de la distancia a la antena. Tambi´ en influyen la direcci´ on respecto al
+patr´ on de radiaci´ on y la presencia de obst´ aculos en el escenario. Por esto, dos
+puntos situados a la misma distancia del transmisor pueden tener distinta
+potencia recibida si uno de ellos se encuentra en una zona m´ as alineada con
+el l´ obulo principal o si la se˜ nal atraviesa edificios antes de llegar.
+En conjunto, estos resultados muestran que la rejilla tridimensional per-
+mite obtener una visi´ on general de la cobertura en el campus, mientras que el
+mapa 2D por capas facilita el an´ alisis detallado de zonas concretas. La com-
+binaci´ on de ambas vistas permite interpretar mejor c´ omo se distribuye la
+72
+
+--- PAGE 84 ---
+potencia recibida en el escenario y c´ omo afectan tanto el patr´ on de radiaci´ on
+como los obst´ aculos presentes.
+6.4. Resultados de receptores m´ oviles
+Una vez generada la rejilla de propagaci´ on, se activan los receptores m´ ovi-
+les y comienzan a actualizarse sus m´ etricas durante el recorrido. En este
+apartado se muestran los resultados obtenidos con la configuraci´ on base,
+centr´ andose en la visualizaci´ on dentro del simulador y en la interpretaci´ on
+de las m´ etricas mostradas en tiempo real.
+En las Figuras 6.7, 6.8 y 6.9 se muestran ejemplos de las vistas asociadas
+a los tres receptores m´ oviles. Cada vista permite seguir al receptor seleccio-
+nado y consultar sus m´ etricas principales, como la distancia al transmisor, la
+potencia recibida, la SNR, las p´ erdidas del enlace y el n´ umero de colisiones
+con edificios.
+Figura 6.7: Vista del receptor CampusVehicle
+73
+
+--- PAGE 85 ---
+Figura 6.8: Vista del receptor LinearVehicle
+Figura 6.9: Vista del receptor Pedestrian
+Aunque los tres receptores utilizan la misma configuraci´ on de propaga-
+ci´ on, los valores mostrados no evolucionan de la misma forma. Esto se debe
+a que cada receptor se desplaza por una zona distinta del escenario y, por
+tanto, cambia su distancia al transmisor, su orientaci´ on respecto al patr´ on
+de radiaci´ on y el n´ umero de obst´ aculos que la se˜ nal atraviesa. Adem´ as, los
+74
+
+--- PAGE 86 ---
+receptores vehiculares utilizan una ganancia de recepci´ on mayor que la del
+receptor peatonal, lo que tambi´ en influye en la potencia recibida.
+Durante el recorrido, aparece un caso puntual en el que la cobertura
+cae de forma muy clara. En la Figura 6.10 se muestra ese instante. Aunque
+apenas dura un segundo, resulta interesante porque permite ver c´ omo el
+simulador responde cuando se juntan varias condiciones desfavorables en el
+mismo punto.
+En ese momento, la se˜ nal atraviesa varios edificios antes de llegar al re-
+ceptor, por lo que el n´ umero de colisiones detectadas es elevado, dando lugar
+a mayores p´ erdidas. Adem´ as, la direcci´ on entre la antena y el receptor no
+coincide con una zona de alta ganancia del patr´ on de radiaci´ on. Por eso, la
+potencia recibida y la SNR bajan de forma considerable, y el indicador visual
+pasa a mostrar un peor estado de cobertura.
+Figura 6.10: Ejemplo de receptor m´ ovil con baja cobertura por obst´ aculos
+Disponer de un simulador en tres dimensiones permite relacionar los va-
+lores num´ ericos con la posici´ on del receptor dentro del escenario. De esta
+forma, adem´ as de analizar la reducci´ on de potencia en una gr´ afica, tambi´ en
+se puede ver en qu´ e zona del campus se encuentra el receptor y qu´ e elementos
+del entorno pueden estar afectando al enlace.
+Adem´ as de mostrar las m´ etricas en tiempo real, el simulador registra
+los valores calculados durante el recorrido y los exporta posteriormente en
+archivos CSV. A partir de estos datos se pueden generar gr´ aficas para analizar
+75
+
+--- PAGE 87 ---
+la evoluci´ on de cada receptor. Como ejemplo, en la Figura 6.11 se muestra
+la potencia recibida frente a la distancia para el receptor vehicular lineal.
+Figura 6.11: Potencia recibida frente a distancia para el receptor LinearVehicle
+En esta gr´ afica no se observa una disminuci´ on uniforme de la potencia
+recibida con la distancia. Para distancias inferiores a unos 95 m, la se˜ nal
+atraviesa el edificio situado bajo la antena, lo que implica p´ erdidas adicionales
+y reduce la potencia recibida. A partir de esa distancia, el receptor deja de
+estar afectado por esa colisi´ on, y la potencia aumenta de forma brusca. Desde
+ese punto, la evoluci´ on vuelve a ser m´ as progresiva y la potencia tiende a
+disminuir conforme aumenta la distancia al transmisor. Los saltos menores
+que aparecen en la gr´ afica se deben principalmente a los cambios de direcci´ on
+respecto al patr´ on de radiaci´ on de la antena.
+Por tanto, los receptores m´ oviles permiten analizar la cobertura desde
+dos puntos de vista complementarios. Por un lado, las vistas del simulador
+muestran en tiempo real la posici´ on del receptor y sus m´ etricas de enlace. Por
+otro lado, los datos exportados permiten estudiar posteriormente la evoluci´ on
+de esas m´ etricas durante el recorrido. En el siguiente apartado se utiliza esta
+informaci´ on para analizar la cobertura seg´ un la SNR y los umbrales definidos.
+de esa pero ser´ ıa muy repetitivo. Si hay algo m´ as que se os ocurra
+dec´ ıdmelo y lo meto.
+76
+
+--- PAGE 88 ---
+6.5. An´ alisis de cobertura seg´ un SNR
+Una vez comprobado el funcionamiento de los receptores m´ oviles, se ana-
+liza la cobertura obtenida durante sus recorridos a partir de sus valores de
+SNR en el tiempo. En este apartado se estudian los resultados de la confi-
+guraci´ on base y, posteriormente, se aumenta la potencia de transmisi´ on para
+comparar los cambios en la cobertura resultante.
+La comparaci´ on se realiza modificando ´ unicamente la potencia de trans-
+misi´ on. Para ello, se utilizan dos valores: 30 dBm, equivalente a 1 W, y 38
+dBm, equivalente a 6,31 W. Este ´ ultimo valor corresponde al l´ ımite superior
+definido para una estaci´ on base de rango medio seg´ un ETSI TS 138 104 [34].
+Para interpretar los resultados se utilizan los umbrales de SNR configu-
+rados en el simulador. En la Figura 6.12 se muestra la evoluci´ on temporal
+de la SNR para el receptor vehicular que recorre el campus utilizando la
+configuraci´ on base de 30 dBm. Se ha elegido este receptor porque su recorri-
+do atraviesa distintas zonas del escenario, dando lugar a m´ as variaciones de
+cobertura que el resto de receptores m´ oviles.
+Figura 6.12: Evoluci´ on temporal de la SNR con potencia de transmisi´ on de 30 dBm
+Como se observa, la SNR no se mantiene constante durante el recorrido.
+Sus variaciones se deben a los cambios de distancia respecto al transmisor,
+a la orientaci´ on respecto al patr´ on de radiaci´ on y a las p´ erdidas adicionales
+77
+
+--- PAGE 89 ---
+por las colisiones con edificios.
+Al aumentar la potencia de transmisi´ on hasta 38 dBm, la potencia recibi-
+da aumenta en todos los puntos del recorrido y, como consecuencia, tambi´ en
+mejora la SNR. En la Figura 6.13 se muestra la evoluci´ on temporal de la
+SNR para el mismo receptor utilizando esta potencia superior.
+Figura 6.13: Evoluci´ on temporal de la SNR con potencia de transmisi´ on de 38 dBm
+La comparaci´ on entre ambas gr´ aficas muestra que el aumento de potencia
+eleva la SNR durante todo el recorrido. Esto reduce los tramos con cober-
+tura insuficiente y aumenta el porcentaje de tiempo en el que el receptor se
+mantiene por encima del umbral de cobertura. Sin embargo, las zonas m´ as
+desfavorables siguen siendo visibles, ya que los obst´ aculos y las direcciones
+de menor ganancia del patr´ on de radiaci´ on contin´ uan afectando al enlace.
+En la Tabla 6.3 se muestra el porcentaje de tiempo con cobertura para los
+tres receptores m´ oviles. Este porcentaje se calcula a partir de las muestras
+registradas durante el recorrido, considerando como cobertura los instantes
+en los que la SNR es superior al umbral m´ ınimo establecido anteriormente.
+78
+
+--- PAGE 90 ---
+Receptor Cobertura con 30 dBm Cobertura con 38 dBm
+CampusVehicle 98,75 % 98,86 %
+LinearVehicle 100 % 100 %
+Pedestrian 100 % 100 %
+Tabla 6.3: Porcentaje de tiempo con cobertura seg´ un la SNR
+Los resultados muestran que, con la configuraci´ on base de 30 dBm, la co-
+bertura ya es pr´ acticamente completa en los tres receptores. Tanto el veh´ ıculo
+lineal como el peat´ on se mantienen por encima del umbral durante todo el
+recorrido, mientras que el veh´ ıculo del campus presenta una peque˜ na p´ erdida
+de cobertura en algunos instantes puntuales. Al aumentar la potencia hasta
+38 dBm, esta p´ erdida se reduce ligeramente, pasando de un 98,75 % a un
+98,86 %.
+La mejora no es muy elevada porque el porcentaje de tiempo con cober-
+tura inicial ya era alto. En este caso, aumentar la potencia no cambia de
+forma significativa el resultado, pero s´ ı permite comprobar que los puntos
+m´ as desfavorables del recorrido del veh´ ıculo del campus est´ an relacionados
+con zonas concretas donde coinciden obst´ aculos y menor ganancia del patr´ on
+de radiaci´ on. Para eliminar por completo esas ca´ ıdas, ser´ ıa necesario seguir
+aumentando la potencia, aunque esto llevar´ ıa a valores menos razonables para
+el escenario analizado.
+Por tanto, este an´ alisis muestra que la configuraci´ on base ofrece cober-
+tura suficiente en la mayor parte del campus. La SNR permite detectar los
+instantes puntuales en los que la cobertura empeora, aunque el porcentaje
+total siga siendo muy alto. Esto resulta ´ util porque permite localizar zonas
+problem´ aticas que podr´ ıan pasar desapercibidas si solo se analizara un valor
+medio o una visi´ on general del mapa de calor.
+6.6. Comparaci´ on entre configuraciones
+En este apartado se comparan distintas configuraciones del simulador
+para estudiar c´ omo afectan algunos par´ ametros al resultado final. En primer
+lugar, se analiza el efecto del patr´ on de radiaci´ on utilizado por la antena.
+Despu´ es, se compara el comportamiento obtenido al utilizar dos modelos de
+p´ erdidas distintos: FSPL y ABG.
+79
+
+--- PAGE 91 ---
+6.6.1. Comparaci´ on entre patrones de radiaci´ on
+Para realizar la comparaci´ on, solo se modifica el patr´ on de radiaci´ on uti-
+lizado por el simulador. Se utilizan tres patrones diferentes: omnidireccional
+con ganancia m´ axima de 16 dBi, reconstrucci´ on mediante el m´ etodo de Gil
+y reconstrucci´ on mediante el m´ etodo de Vasiliadis conk= 2.
+En la Figura 6.14 se muestran los mapas de calor 2D obtenidos para los
+tres patrones en la capa m´ as cercana a la altura de la antena. Esta compara-
+ci´ on permite estudiar c´ omo var´ ıa la distribuci´ on de potencia recibida cuando
+se modifica el patr´ on de radiaci´ on de la antena.
+Figura 6.14: Comparaci´ on de mapas de calor 2D para distintos patrones de radiaci´ on a la altura de la
+antena
+siado de im´ agenes, aunque lo mejor es verlo en el propio programa
+y no mediante capturas. Las he recortado para meter tres en una,
+pero eso hace que no se vea la leyenda, que es un factor importan-
+te. La otra opci´ on es poner las tres im´ agenes completas, una tras
+otra, pero creo que eso lo saturar´ ıa demasiado.
+En esta capa, las diferencias entre configuraciones son menos evidentes,
+ya que se trata de una zona cercana a la altura del transmisor y los valores de
+potencia recibida son elevados en gran parte del mapa. Aun as´ ı, se aprecia
+que el patr´ on omnidireccional tiene valores altos en todas las direcciones,
+mientras que los patrones reconstruidos concentran la mayor potencia hacia
+la parte frontal de la antena. En la zona trasera, tanto Gil como Vasiliadis
+muestran valores menores, ya que la ganancia del patr´ on real es menor en
+dicha direcci´ on.
+Para comparar una zona m´ as realista, en la Figura 6.15 se muestra una
+capa situada cerca del nivel del suelo. Esta altura es m´ as interesante porque
+80
+
+--- PAGE 92 ---
+se aproxima a la zona donde se encuentran los receptores m´ oviles durante
+sus recorridos.
+Figura 6.15: Comparaci´ on de mapas de calor 2D para distintos patrones de radiaci´ on cerca del nivel del
+suelo
+escenario con relieve, el receptor del campus se mueve entre -19 y
+-25 metros respecto a la antena. Eleg´ ı 20 porque es la altura de los
+otros dos receptores m´ oviles, pero es una aproximaci´ on.
+En la capa cercana al suelo se observan diferencias m´ as claras entre patro-
+nes. Con el patr´ on omnidireccional, la potencia se reparte de forma similar
+en todas las direcciones, por lo que las zonas de menor potencia se deben
+a la distancia hasta el transmisor y a las p´ erdidas introducidas al atravesar
+edificios.
+En cambio, en los patrones reconstruidos aparecen zonas de menor poten-
+cia debido a la forma del patr´ on de radiaci´ on. Con Vasiliadis se distinguen
+varias franjas circulares alrededor de la antena, correspondientes a direccio-
+nes con menor ganancia, adem´ as de tres haces traseros donde la potencia
+disminuye de forma notable. En Gil tambi´ en aparecen variaciones similares,
+aunque se observan principalmente franjas semicirculares en la parte trasera
+y con un haz de menor potencia menos marcado.
+Adem´ as del mapa de calor, se analiza el efecto de cada patr´ on sobre los
+receptores m´ oviles. Para ello, se calcula la potencia recibida media durante
+el recorrido de cada receptor, utilizando los datos exportados en los archivos
+CSV. Como los valores de potencia est´ an expresados en dBm, primero se
+convierten a escala lineal en mW, despu´ es se calcula la media y finalmente
+se vuelve a convertir el resultado a dBm. En la Tabla 6.4 se muestran los
+resultados obtenidos para los tres patrones de radiaci´ on analizados.
+81
+
+--- PAGE 93 ---
+Receptor Omni Gil Vasiliadis
+CampusVehicle -36,44 dBm -43,43 dBm -50,42 dBm
+LinearVehicle -33,94 dBm -42,91 dBm -49,87 dBm
+Pedestrian -49,61 dBm -58,14 dBm -67,37 dBm
+Tabla 6.4: Potencia recibida media para distintos patrones de radiaci´ on
+Los resultados permiten comprobar que el patr´ on de radiaci´ on influye
+fuertemente en la potencia recibida por los receptores m´ oviles. En todos los
+recorridos, el patr´ on omnidireccional da lugar a los valores medios m´ as altos.
+Esto se debe a que, aunque tambi´ en presenta variaci´ on con la elevaci´ on, no
+introduce una diferencia tan marcada entre la parte frontal y trasera de la
+antena como ocurre con los patrones reconstruidos.
+Sin embargo, este resultado no significa que el patr´ on omnidireccional sea
+la configuraci´ on m´ as realista. Los patrones reconstruidos representan mejor el
+comportamiento direccional de la antena utilizada, ya que parten de los cortes
+reales del patr´ on de radiaci´ on. Aunque sus valores medios sean menores,
+especialmente en el caso de Vasiliadis, estos resultados son m´ as coherentes
+con una antena real, donde la potencia recibida depende de la direcci´ on
+concreta en la que se encuentra cada receptor respecto al transmisor.
+Por tanto, la comparaci´ on muestra que no basta con analizar si existe
+cobertura o no. Dos configuraciones pueden ofrecer cobertura suficiente en
+gran parte del recorrido, pero presentar niveles de potencia recibida muy
+distintos. Por este motivo, la potencia media y los mapas de calor ayudan a
+interpretar mejor el efecto del patr´ on de radiaci´ on utilizado.
+6.6.2. Comparaci´ on entre modelos de p´ erdidas
+Adem´ as del patr´ on de radiaci´ on, el modelo de p´ erdidas utilizado tambi´ en
+afecta a los resultados obtenidos. Para comprobarlo, se comparan dos confi-
+guraciones modificando ´ unicamente el modelo de p´ erdidas: una utilizando el
+modelo FSPL y otra utilizando el modelo ABG.
+El modelo FSPL representa la propagaci´ on en espacio libre, por lo que de-
+pende principalmente de la distancia y de la frecuencia. En cambio, el modelo
+ABG incorpora par´ ametros dependientes del tipo de escenario y permite re-
+presentar un comportamiento m´ as espec´ ıfico para entornos urbanos. Por este
+motivo, se espera que los resultados obtenidos con ABG no coincidan con los
+82
+
+--- PAGE 94 ---
+obtenidos mediante FSPL.
+En la Figura 6.16 se muestra la comparaci´ on entre ambos modelos de
+p´ erdidas para la misma configuraci´ on de antena y potencia de transmisi´ on.
+Para facilitar la interpretaci´ on, se utiliza nuevamente la capa m´ as cercana al
+nivel del suelo.
+Figura 6.16: Comparaci´ on de mapas de calor 2D utilizando los modelos FSPL y ABG
+En la comparaci´ on visual se observa que la distribuci´ on de potencia es
+similar en ambos modelos. Las zonas de mayor y menor potencia aparecen
+aproximadamente en las mismas regiones del campus, ya que se mantiene
+el mismo patr´ on de radiaci´ on, la misma posici´ on de la antena y los mismos
+obst´ aculos en el escenario. Sin embargo, los valores l´ ımite s´ ı cambian: en
+FSPL el valor m´ aximo mostrado es de 1,87 dBm, mientras que en ABG es de
+-11,39 dBm. Los valores m´ ınimos, al contrario, son m´ as cercanos, con -150,11
+dBm en FSPL y -146,62 dBm en ABG.
+Por tanto, aunque el mapa de calor permite ver que la distribuci´ on general
+es muy similar, no es suficiente para valorar por s´ ı solo c´ omo afecta el cambio
+de modelo a los receptores. Para completar la comparaci´ on, se calcula la
+potencia recibida media de cada receptor a partir de los datos exportados
+en los CSV. Al igual que en el apartado anterior, los valores en dBm se
+convierten primero a mW, se calcula la media en escala lineal y, finalmente,
+se vuelve a convertir el resultado a dBm.
+83
+
+--- PAGE 95 ---
+Receptor FSPL ABG
+CampusVehicle -50,42 dBm -46,47 dBm
+LinearVehicle -49,87 dBm -46,10 dBm
+Pedestrian -67,37 dBm -66,93 dBm
+Tabla 6.5: Potencia recibida media para distintos modelos de p´ erdidas
+Los valores de la tabla permiten comparar el efecto de cada modelo sobre
+los recorridos de los receptores m´ oviles. Aunque en el mapa de calor el valor
+m´ aximo de ABG es menor que el de FSPL, las potencias medias obtenidas
+para los receptores vehiculares son superiores con ABG. Esto indica que,
+aunque el valor m´ aximo del mapa de calor sea mayor, no significa que todas
+las potencias recibidas lo sean.
+En el caso del receptor peatonal, la diferencia entre ambos modelos es mu-
+cho menor. Esto se debe a que cada receptor recorre zonas distintas del esce-
+nario, con diferentes distancias al transmisor, direcciones respecto al patr´ on
+de radiaci´ on y colisiones con edificios. Por tanto, el cambio de modelo de
+p´ erdidas no afecta por igual a todos los receptores.
+Esta comparaci´ on muestra que es importante analizar los resultados desde
+varios puntos de vista. El mapa de calor permite observar la distribuci´ on
+espacial de la potencia, mientras que los datos exportados de los receptores
+m´ oviles permiten estudiar qu´ e ocurre durante recorridos concretos. Por ello,
+no es suficiente quedarse solo con la representaci´ on visual o con un valor
+m´ aximo, sino que es necesario combinar ambas fuentes de informaci´ on.
+las reuniones y que me hab´ eis dicho. Es un poco raro por el tema
+de que el punto fuerte de este trabajo es la visualizaci´ on en tiempo
+real y aqu´ ı solo se pueden poner capturas. No obstante, si se os
+ocurre algo m´ as dec´ ıdmelo y meto la prueba/datos que me dig´ ais.
+6.7. Limitaciones detectadas
+Aunque el simulador desarrollado permite analizar la cobertura de forma
+visual y comparar distintas configuraciones, durante las pruebas se han de-
+tectado algunas limitaciones que deben tenerse en cuenta al interpretar los
+resultados:
+84
+
+--- PAGE 96 ---
+P´ erdida asociada a edificios:las p´ erdidas por edificios se calcu-
+lan correctamente a partir de las colisiones detectadas, pero todos los
+edificios se interpretan como si estuvieran formados ´ unicamente por
+hormig´ on. Por tanto, no se diferencian materiales como cristal, metal
+o ladrillo, ni se tienen en cuenta ventanas, ventanales, puertas o muros
+interiores. Adem´ as, los edificios se consideran huecos, por lo que no se
+modelan las p´ erdidas que podr´ ıan aparecer al atravesar su interior.
+Resoluci´ on de la rejilla de propagaci´ on:para cubrir todo el cam-
+pus es necesario generar una cantidad de v´ oxeles muy elevada. Lo ideal
+ser´ ıa utilizar un tama˜ no de v´ oxel menor para obtener mejores resulta-
+dos, pero al reducirlo aumentan enormemente los recursos necesarios
+para llevar a cabo la simulaci´ on, pudiendo hacer que deje de ejecutarse
+correctamente en equipos convencionales. Por este motivo, en las prue-
+bas que cubren todo el campus se utiliza un tama˜ no de v´ oxel de 2 m.
+Este valor permite mantener un coste computacional asumible, pero
+reduce la resoluci´ on de los mapas de calor.
+Rutas de los receptores m´ oviles:las m´ etricas de los receptores
+m´ oviles solo se obtienen en los puntos por los que pasan sus rutas. Esto
+permite estudiar la evoluci´ on de la se˜ nal durante recorridos concretos,
+pero no conocer directamente la potencia recibida en cualquier punto
+deseado del campus.
+Reconstrucci´ on aproximada del patr´ on de radiaci´ on:el patr´ on
+tridimensional se obtiene a partir de los dos cortes bidimensionales
+de la antena. Esto genera una aproximaci´ on, pero no equivale a una
+medida real completa en tres dimensiones. Adem´ as, algunos m´ etodos
+de reconstrucci´ on simplifican la informaci´ on. Por ejemplo, el m´ etodo
+de Vasiliadis trabaja ´ unicamente con 180 grados del patr´ on, por lo que
+parte de la informaci´ on original se pierde durante la reconstrucci´ on.
+Visualizaci´ on del mapa de calor:al representar muchos v´ oxeles
+semitransparentes al mismo tiempo, algunas zonas pueden saturarse
+visualmente y ser dif´ ıciles de interpretar. Para reducir este problema,
+se a˜ nadieron controles de transparencia, umbral y mapa 2D por capas,
+pero la interpretaci´ on del mapa sigue dependiendo de la configuraci´ on
+visual elegida por el usuario.
+85
+
+--- PAGE 97 ---
+Cap´ ıtulo 7
+Conclusiones y trabajos futuros
+En este cap´ ıtulo se presentan las conclusiones obtenidas tras el desarrollo
+y la evaluaci´ on del simulador a partir de los objetivos planteados inicialmen-
+te. Adem´ as, se proponen distintas l´ ıneas de trabajo futuro para ampliar sus
+funcionalidades, mejorar el realismo de la simulaci´ on y aumentar las posibi-
+lidades de an´ alisis.
+7.1. Conclusiones
+El estudio de la cobertura es fundamental para analizar el comporta-
+miento de los sistemas de comunicaciones inal´ ambricas y conocer c´ omo se
+distribuye la se˜ nal en una zona determinada. Una herramienta tridimensio-
+nal aporta una ventaja importante, ya que permite relacionar los valores
+calculados con la posici´ on real de los elementos dentro del escenario. En en-
+tornos urbanos, la se˜ nal puede verse afectada por muchos factores, como la
+posici´ on de las antenas, el patr´ on de radiaci´ on, los obst´ aculos, la altura de
+los receptores o el modelo de propagaci´ on utilizado.
+Este tipo de an´ alisis puede realizarse modificando los par´ ametros de en-
+trada y observando c´ omo afectan a los resultados obtenidos. En este proyecto
+se ha desarrollado un simulador tridimensional que representa visualmente
+la cobertura en un entorno urbano. Para ello, se ha combinado Unity para
+la parte visual e interactiva con Python para los c´ alculos de propagaci´ on y
+m´ etricas del enlace.
+A partir del desarrollo realizado y de las pruebas obtenidas, se puede
+concluir que se han cumplido los objetivos planteados inicialmente:
+86
+
+--- PAGE 98 ---
+Se ha construido un escenario urbano tridimensional basado en el Cen-
+tro Universitario de M´ erida, incluyendo edificios, veh´ ıculos, peatones y
+elementos del entorno. Esto permite analizar la cobertura en un esce-
+nario reconocible y no ´ unicamente en un entorno gen´ erico.
+Se ha modelado una antena transmisora con diferentes patrones de ra-
+diaci´ on. Primero se implement´ o un modelo omnidireccional y posterior-
+mente se incorpor´ o una antena de tipo panel con un patr´ on reconstruido
+a partir de sus cortes horizontal y vertical.
+Se ha implementado la reconstrucci´ on tridimensional del patr´ on de ra-
+diaci´ on mediante distintos m´ etodos. Las pruebas realizadas frente a
+MATLAB muestran que la reconstrucci´ on mediante Vasiliadis con k =
+2 reproduce exactamente los valores utilizados como referencia, por lo
+que el m´ etodo utilizado por el simulador es el mismo que el utilizado
+en un software real funcional.
+Se ha conseguido combinar Unity con el simulador externo desarrollado
+en Python. Unity se encarga de la interacci´ on, la representaci´ on del
+escenario y la visualizaci´ on de resultados, mientras que Python realiza
+los c´ alculos de propagaci´ on y m´ etricas del enlace, como la potencia
+recibida y la SNR.
+Se ha representado la cobertura mediante una rejilla tridimensional de
+v´ oxeles y un mapa de calor 3D. Adem´ as, se ha a˜ nadido una vista 2D
+por capas de altura, lo que facilita el an´ alisis de la potencia recibida
+en zonas concretas del escenario y permite estudiar la influencia de la
+altura.
+Se han a˜ nadido receptores m´ oviles con rutas definidas dentro del cam-
+pus. Gracias a ellos, se ha podido analizar la evoluci´ on de la cobertura
+durante el movimiento y comprobar que la se˜ nal no depende ´ unicamen-
+te de la distancia al transmisor, sino tambi´ en del patr´ on de radiaci´ on,
+los obst´ aculos y la posici´ on del receptor.
+Se ha implementado la exportaci´ on autom´ atica de resultados en CSV
+y la generaci´ on de gr´ aficas. Esto permite conservar los datos de cada
+ejecuci´ on, analizar los resultados fuera de Unity y comparar distintas
+configuraciones de simulaci´ on.
+Tambi´ en se han incorporado mejoras de rendimiento para facilitar la
+ejecuci´ on del simulador en equipos con distintas prestaciones. Entre
+ellas se encuentra la generaci´ on del mapa de calor mediante chunks,
+87
+
+--- PAGE 99 ---
+lo que permite dividir la malla en bloques y gestionar mejor su repre-
+sentaci´ on. Adem´ as, se han a˜ nadido modos de rendimiento para ocultar
+elementos secundarios del escenario cuando sea necesario, junto con
+una limitaci´ on de FPS para evitar un consumo innecesario de recursos.
+Finalmente, se puede concluir que se han cumplido los objetivos propues-
+tos al inicio del proyecto. El simulador permite configurar distintos escenarios
+de prueba, representar la cobertura de forma tridimensional, analizar recep-
+tores m´ oviles, comparar configuraciones y exportar los resultados obtenidos
+para su estudio posterior.
+trabajo ha supuesto un reto y refleja el trabajo de un ingenie-
+ro: resolver un problema que requiere combinar conocimientos de
+distintos campos. Ha sido necesario investigar previamente los con-
+ceptos te´ oricos, construir un escenario 3D, trabajar con un tipo de
+programaci´ on diferente, aplicar t´ ecnicas de optimizaci´ on, dise˜ no...
+Aunque no s´ e si esto sobra aqu´ ı, si ponerlo en un apartado espec´ ıfi-
+co o si no se puede poner ya que es personal y no es neutro formal
+como el resto del trabajo.
+7.2. Trabajos futuros
+Debido al limitado tiempo del proyecto, no se han podido implementar
+todas las funcionalidades deseadas. A partir del simulador desarrollado, se
+plantean varias l´ ıneas de mejora que permitir´ ıan aumentar el realismo de la
+simulaci´ on, ampliar las posibilidades de an´ alisis y hacer la herramienta m´ as
+flexible.
+P´ erdidas por materiales:la primera mejora directa ser´ ıa imple-
+mentar los distintos materiales presentes en los edificios, adem´ as del
+hormig´ on, aplicando p´ erdidas distintas seg´ un el material atravesado.
+Adem´ as, podr´ ıan a˜ nadirse p´ erdidas adicionales al propagarse por el in-
+terior de los edificios, ya que ETSI TR 138 901 incluye tanto p´ erdidas
+por penetraci´ on en materiales como una p´ erdida interior dependiente
+de la profundidad dentro del edificio [15].
+Receptor m´ ovil controlable por el usuario:otra mejora muy ´ util
+ser´ ıa a˜ nadir un receptor que pueda moverse libremente por el escenario.
+88
+
+--- PAGE 100 ---
+Esto permitir´ ıa consultar la cobertura en puntos concretos elegidos por
+el usuario, en lugar de depender ´ unicamente de rutas predefinidas. Esta
+funcionalidad requerir´ ıa implementar control de movimiento y f´ ısicas,
+ya que el escenario tridimensional cuenta con relieve y ser´ ıa necesario
+gestionar correctamente las colisiones con el suelo, la gravedad y el
+desplazamiento del receptor sobre el terreno.
+Modificaci´ on de la posici´ on de la antena:actualmente la antena
+se encuentra en una posici´ on fija dentro del escenario. Como trabajo
+futuro, ser´ ıa interesante permitir modificar su ubicaci´ on desde la inter-
+faz, para estudiar c´ omo cambia la cobertura al colocar el transmisor en
+distintos puntos del campus.
+M´ ultiples tipos de antenas:actualmente el simulador permite utili-
+zar una antena omnidireccional y una antena de tipo panel reconstruida
+a partir de sus cortes horizontal y vertical. Como mejora futura, podr´ ıan
+a˜ nadirse m´ as tipos de antenas reales, permitiendo cargar y reconstruir
+patrones con caracter´ ısticas distintas. Esto permitir´ ıa comparar ante-
+nas con diferentes ganancias y patrones de radiaci´ on dentro del mismo
+escenario.
+Incorporaci´ on de varias antenas transmisoras:otra l´ ınea de me-
+jora ser´ ıa permitir el uso de m´ as de una antena en el escenario. Esto
+permitir´ ıa estudiar c´ omo cambia la cobertura al a˜ nadir varios trans-
+misores, analizar zonas cubiertas por m´ as de una antena e introducir
+interferencias entre ellas.
+Beamforming:tambi´ en podr´ ıa a˜ nadirse alg´ un tipo debeamforming.
+Esta t´ ecnica permite concentrar la energ´ ıa transmitida o recibida en
+una direcci´ on concreta mediante un array de antenas, aumentando la
+ganancia respecto a una transmisi´ on omnidireccional [39]. En el simu-
+lador, esto permitir´ ıa orientar din´ amicamente el haz de radiaci´ on hacia
+determinadas zonas o receptores, estudiando t´ ecnicas m´ as cercanas a
+sistemas celulares actuales.
+Jos´ e Javier dijo que pod´ ıamos estudiarlo llegado el momento,
+pero jam´ as llegamos a volver a hablarlo, por lo que lo he
+metido como trabajo futuro. He cogido la referencia del TFG
+para sacar la definici´ on tambi´ en de ah´ ı.
+89
+
+--- PAGE 101 ---
+Reconstrucci´ on del patr´ on mediante deep learning:una mejora
+futura ser´ ıa a˜ nadir un m´ etodo de reconstrucci´ on basado en deep lear-
+ning. MATLAB utiliza est´ e m´ etodo mediante la funci´ onpatternFromAI,
+que permite reconstruir un patr´ on tridimensional a partir de dos cortes
+bidimensionales utilizando un modelo preentrenado [21]. Esto podr´ ıa
+mejorar la reconstrucci´ on en antenas con patrones m´ as complejos, don-
+de los m´ etodos tradicionales como Gil o Vasiliadis pueden perder infor-
+maci´ on.
+90
+
+--- PAGE 102 ---
+Bibliograf´ ıa
+[1] 3GPP, “5G System Overview.”https://www.3gpp.org/
+technologies/5g-system-overview, 2022. Accedido: 2026-07-16.
+[2] J. Yang, M. Andersin, T. Balercia, and C. Chong, “Developing
+Next-Generation Wireless Networks with NVIDIA Aerial Om-
+niverse Digital Twin.”https://developer.nvidia.com/blog/
+developing-next-gen-wireless-networks-with-nvidia-aerial-omniverse-digital-twin/,
+Sept. 2024. Accedido: 2026-07-18.
+[3] NVIDIA, “Introduction to Sionna RT.”https://nvlabs.github.io/
+sionna/rt/tutorials/Introduction.html, 2026. Sionna 2.0.1. Acce-
+dido: 2026-07-18.
+[4] MathWorks, “RF Propagation and Visualiza-
+tion.”https://www.mathworks.com/help/antenna/gs/
+rf-propagation-and-visualization.html, 2026. Accedido: 2026-07-
+18.
+[5] J. J. Rico-Palomo, J. Galeano-Brajones, D. Cortes-Polo, J. F.
+Valenzuela-Valdes, and J. Carmona-Murillo, “Chained orchestrator al-
+gorithm for ran-slicing resource management: A contribution to ultra-
+reliable 6g communications,”IEEE Access, vol. 10, pp. 113662–113677,
+2022.
+[6] Andrew, an Amphenol company, “HWXX-6516DS1-VTM /
+HWXX-6516DS1-A2M.”https://www.andrew.com/products/
+base-station-antennas/antennas/itemhwxx-6516ds1-vtm/, 2026.
+Accedido: 2026-07-12.
+[7] Unity Technologies, “Unity Real-Time Development Platform.”https:
+//unity.com/es, 2026. Accedido: 2026-07-16.
+[8] Blender Foundation, “Blender.”https://www.blender.org/, 2026. Ac-
+cedido: 2026-07-16.
+91
+
+--- PAGE 103 ---
+[9] Microsoft, “Visual Studio Code.”https://code.visualstudio.com/,
+2026. Accedido: 2026-07-16.
+[10] Adobe, “Adobe Photoshop.”https://www.adobe.com/es/products/
+photoshop.html, 2026. Accedido: 2026-07-16.
+[11] Ministerio de Trabajo y Econom´ ıa Social, “XVIII Convenio colectivo es-
+tatal de empresas de consultor´ ıa, tecnolog´ ıas de la informaci´ on y estudios
+de mercado y de la opini´ on p´ ublica.”https://www.boe.es/diario_
+boe/txt.php?id=BOE-A-2023-17238, 2023. BOE n´ um. 177, 26 de julio
+de 2023. Accedido: 2026-07-16.
+[12] Unity Technologies, “Changes to Unity subscription plans and pri-
+cing.”https://unity.com/products/pricing-updates, 2026. Acce-
+dido: 2026-07-16.
+[13] ITU-R, “Recommendation ITU-R M.1224-1: Vocabulary of terms for
+International Mobile Telecommunications (IMT),” Tech. Rep. Recom-
+mendation ITU-R M.1224-1, International Telecommunication Union,
+Mar. 2012. Accedido: 2026-07-17.
+[14] I. Matei and C. Bock, “Modeling Methodologies and Simulation for Dy-
+namical Systems,” Tech. Rep. NISTIR 7875, National Institute of Stan-
+dards and Technology, Aug. 2012. Accedido: 2026-07-17.
+[15] 3GPP, “Study on channel model for frequencies from 0.5 to 100 GHz,”
+Tech. Rep. ETSI TR 138 901 V19.2.0, ETSI, Feb. 2026. Accedido: 2026-
+07-09.
+[16] ITU-R, “Recommendation ITU-R P.341-4: The concept of transmission
+loss for radio links,” Tech. Rep. Recommendation ITU-R P.341-4, Inter-
+national Telecommunication Union, Oct. 1999. Accedido: 2026-07-15.
+[17] T. Abbas, F. Qamar, I. Ahmed, K. Dimyati, and M. B. Majed, “Pro-
+pagation channel characterization for 28 and 73 ghz millimeter-wave 5g
+frequency band,” in2017 IEEE 15th Student Conference on Research
+and Development (SCOReD), pp. 297–302, 2017.
+[18] N. R. Leonor, R. F. S. Caldeirinha, M. G. S´ anchez, and T. R. Fernandes,
+“A three-dimensional directive antenna pattern interpolation method,”
+IEEE Antennas and Wireless Propagation Letters, vol. 15, pp. 881–884,
+2016.
+92
+
+--- PAGE 104 ---
+[19] F. Gil, A. Claro, J. Ferreira, C. Pardelinha, and L. Correia, “A 3d in-
+terpolation method for base-station-antenna radiation patterns,”IEEE
+Antennas and Propagation Magazine, vol. 43, no. 2, pp. 132–137, 2001.
+[20] T. Vasiliadis, A. Dimitriou, and G. Sergiadis, “A novel technique for the
+approximation of 3-d antenna radiation patterns,”IEEE Transactions
+on Antennas and Propagation, vol. 53, no. 7, pp. 2212–2219, 2005.
+[21] MathWorks, “Reconstruct 3-D Antenna Pattern from 2-D Slices Using
+Deep Learning.”https://es.mathworks.com/help/antenna/ug/
+reconstruct-3d-pattern-from-2d-slices-using-deep-learning.
+html, 2026. Accedido: 2026-07-15.
+[22] ITU-R, “Radiocommunication objectives and requirements for Public
+Protection and Disaster Relief,” Tech. Rep. Report ITU-R M.2377-2,
+International Telecommunication Union, Sept. 2023. Accedido: 2026-
+07-17.
+[23] 3GPP, “LTE; 5G; Mission Critical Services Common Requirements
+(MCCoRe); Stage 1,” Tech. Rep. ETSI TS 122 280 V18.5.0, ETSI, May
+2024. 3GPP TS 22.280 version 18.5.0 Release 18. Accedido: 2026-07-17.
+[24] 3GPP, “LTE; Service requirements for V2X services,” Tech. Rep. ETSI
+TS 122 185 V19.0.0, ETSI, Oct. 2025. 3GPP TS 22.185 version 19.0.0
+Release 19. Accedido: 2026-07-18.
+[25] 3GPP, “5G; Service requirements for enhanced V2X scenarios,” Tech.
+Rep. ETSI TS 122 186 V19.0.0, ETSI, Oct. 2025. 3GPP TS 22.186
+version 19.0.0 Release 19. Accedido: 2026-07-18.
+[26] 3GPP, “Digital cellular telecommunications system (Phase 2+); Univer-
+sal Mobile Telecommunications System (UMTS); LTE; Telecommunica-
+tion management; Self-Organizing Networks (SON); Self-healing con-
+cepts and requirements,” Tech. Rep. ETSI TS 132 522 V10.6.0, ETSI,
+Oct. 2013. 3GPP TS 32.522 version 10.6.0 Release 10. Accedido: 2026-
+07-18.
+[27] Altair, “Radio Coverage Planning with Altair WinProp.”https://web.
+altair.com/winprop-telecom, 2026. Accedido: 2026-07-18.
+[28] Google, “Google earth.”https://earth.google.com/, 2026. Accedido:
+2026-07-07.
+93
+
+--- PAGE 105 ---
+[29] ambientCG, “ambientcg: Free 3d assets.”https://ambientcg.com/,
+2026. Accedido: 2026-07-07.
+[30] Poly Haven, “Poly haven: The public 3d asset library.”https://
+polyhaven.com/, 2026. Accedido: 2026-07-07.
+[31] BlenderKit, “Blenderkit: 3d asset library.”https://www.blendkit.
+com/, 2026. Accedido: 2026-07-07.
+[32] Cisco, “Troubleshoot Common Cellular Interface Is-
+sues.”https://www.cisco.com/c/en/us/td/docs/
+routers/sdwan/configuration/Monitor-And-Maintain/
+monitor-maintain-book/m-troubleshooting.html#Cisco_Concept.
+dita_2989a870-72b4-4b9a-9153-41e635b8d1ab, 2026. Accedido:
+2026-07-11.
+[33] Andrew, an Amphenol company, “HWXX-6516DS1-
+VTM / HWXX-6516DS1-A2M Product Specification.”
+https://www.andrew.com/globalassets/digizuite/
+262620-p360-hwxx-6516ds1-vtm-external.pdf, 2025. Accedi-
+do: 2026-07-12.
+[34] 3GPP, “5G; NR; Base Station (BS) radio transmission and reception
+(3GPP TS 38.104 version 19.4.0 Release 19),” Tech. Rep. ETSI TS 138
+104 V19.4.0, ETSI, Apr. 2026. Accedido: 2026-07-12.
+[35] ETSI, “Intelligent Transport Systems (ITS); ITS-G5 Access layer spe-
+cification for Intelligent Transport Systems operating in the 5 GHz fre-
+quency band,” Tech. Rep. ETSI EN 302 663 V1.3.1, ETSI, Jan. 2020.
+Accedido: 2026-07-12.
+[36] 3GPP, “Study on LTE-based V2X Services,” Tech. Rep. 3GPP TR
+36.885, 3GPP, 2016. Accedido: 2026-07-12.
+[37] 3GPP, “Evolved Universal Terrestrial Radio Access (E-UTRA); Radio
+Frequency (RF) system scenarios (3GPP TR 36.942 version 18.0.0 Re-
+lease 18),” Tech. Rep. ETSI TR 136 942 V18.0.0, ETSI, May 2024.
+Accedido: 2026-07-12.
+[38] MathWorks, “patternFromSlices: Reconstruct approximate 3-D radia-
+tion pattern from two orthogonal slices.”https://es.mathworks.com/
+help/antenna/ref/patternfromslices.html, 2026. Accedido: 2026-
+07-13.
+94
+
+--- PAGE 106 ---
+[39] S. Kutty and D. Sen, “Beamforming for millimeter wave communica-
+tions: An inclusive survey,”IEEE Communications Surveys & Tutorials,
+vol. 18, no. 2, pp. 949–973, 2016.
+[40] 3GPP, “5G; NR; Physical layer measurements (3GPP TS 38.215 version
+19.2.0 Release 19),” Tech. Rep. ETSI TS 138 215 V19.2.0, ETSI, Feb.
+2026. Accedido: 2026-07-07.
+95
+
+--- PAGE 107 ---
+Anexo A
+Uso responsable de
+herramientas de inteligencia
+artificial
+Durante el desarrollo de este trabajo, se han utilizado herramientas de
+inteligencia artificial generativa como apoyo en distintas tareas. Una de ellas
+ha sido la b´ usqueda de referencias ´ utiles, ya que ChatGPT no solo permi-
+te buscar informaci´ on, sino tambi´ en localizar fuentes a las que acudir para
+consultarla.
+Adem´ as, estas herramientas han resultado realmente ´ utiles durante el de-
+sarrollo en Unity, ya que permiten obtener de forma r´ apida explicaciones so-
+bre el funcionamiento del motor y resolver dudas que, de otro modo, habr´ ıan
+requerido de depender de foros, v´ ıdeos o tutoriales. Tambi´ en se han utilizado
+para obtener ideas sobre el dise˜ no y la distribuci´ on de los elementos de la
+interfaz. Este apoyo ha sido fundamental en la elecci´ on de colores debido al
+daltonismo del autor.
+puedo hablar en primera persona de m´ ı; no s´ e como decirlo de otra
+forma.
+La memoria se ha redactado en Overleaf, que incluye una herramienta de
+correcci´ on autom´ atica mediante inteligencia artificial. Esta funci´ on ayuda a
+detectar problemas de puntuaci´ on, especialmente relacionados con el uso del
+punto y coma, y propone cambios para mejorar la formalidad y la claridad
+de la redacci´ on, de una forma similar a los correctores ortogr´ aficos habituales
+de Word.
+96
+
+--- PAGE 108 ---
+Tambi´ en se han utilizado estas herramientas para comprender conceptos
+nuevos relacionados con las distintas ´ areas del proyecto. Algunos art´ ıculos
+presentaban una dificultad elevada, y mantener una conversaci´ on con una
+inteligencia artificial generativa ha permitido comprender mejor determina-
+dos conceptos mediante explicaciones m´ as sencillas y adaptadas a cada duda.
+En ning´ un caso la inteligencia artificial sustituye el trabajo del ingeniero,
+ya que las decisiones, la implementaci´ on y la comprobaci´ on de los resultados
+siguen siendo responsabilidad del autor. Sin embargo, utilizada de forma cr´ ıti-
+ca y responsable, puede ser una herramienta de gran utilidad para adquirir
+conocimientos.
+julio, y el tribunal les pregunt´ o directamente c´ omo hab´ ıan usado
+la IA en el trabajo, ya que en la memoria no lo aclaraban. No s´ e si
+esto queda demasiado forzado, ya que algunos profesores son anti
+IA, pero como lo hablamos en una reuni´ on, lo dejo aqu´ ı.
+97

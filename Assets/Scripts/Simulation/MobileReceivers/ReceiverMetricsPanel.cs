@@ -30,16 +30,16 @@ public class ReceiverMetricsPanel : MonoBehaviour
             return;
         }
 
-        ReceiverMetricsSnapshot m = currentReceiver.currentMetrics;
+        ReceiverMetricsSnapshot metrics = currentReceiver.currentMetrics;
 
         titleText.text = $"Metrics {currentReceiver.receiverId}";
 
         metricsText.text =
-            $"Distance: {m.distanceMeters:F2} m\n" +
-            $"Building collisions: {m.buildingCollisions}\n" +
-            $"Path loss: {m.pathLossDb:F2} dB\n\n" +
-            $"Prx: {m.prxDbm:F2} dBm\n" +
-            $"SNR: {m.snrDb:F2} dB";
+            $"Distance: {metrics.distanceMeters:F2} m\n" +
+            $"Building collisions: {metrics.buildingCollisions}\n" +
+            $"Path loss: {metrics.pathLossDb:F2} dB\n\n" +
+            $"Prx: {metrics.prxDbm:F2} dBm\n" +
+            $"SNR: {metrics.snrDb:F2} dB";
     }
 
     /// <summary>

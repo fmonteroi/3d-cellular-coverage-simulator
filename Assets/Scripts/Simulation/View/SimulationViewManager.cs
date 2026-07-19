@@ -30,7 +30,7 @@ public class SimulationViewManager : MonoBehaviour
     public Slider patternViewElevationSlider;
 
     [Header("Scene visibility")]
-    public GameObject prxVoxelRenderer;
+    public GameObject voxelRendererObject;
     public MeshRenderer patternMeshRenderer;
 
     [Header("Camera UI")]
@@ -394,9 +394,9 @@ public class SimulationViewManager : MonoBehaviour
     /// </summary>
     private void SetSceneViewObjects(bool showVoxels, bool showPattern)
     {
-        if (prxVoxelRenderer != null)
+        if (voxelRendererObject != null)
         {
-            prxVoxelRenderer.SetActive(showVoxels);
+            voxelRendererObject.SetActive(showVoxels);
         }
 
         if (patternMeshRenderer != null)

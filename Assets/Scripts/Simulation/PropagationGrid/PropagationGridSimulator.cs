@@ -18,7 +18,7 @@ public class PropagationGridSimulator : MonoBehaviour
     [Header("References")]
     public PropagationSettings settings;
     public PythonBridgeService bridgeService;
-    public Transform receiversParent;
+    public Transform debugVoxelsParent;
     public PrxVoxelChunkRenderer voxelRenderer;
     public ThresholdSlider thresholdSlider;
     public SimulationLoadingPanel loadingPanel;
@@ -29,7 +29,7 @@ public class PropagationGridSimulator : MonoBehaviour
     public bool includeBuildingCollisions = true;
 
     [Header("Debug")]
-    public GameObject receiverDebugPrefab;
+    public GameObject voxelDebugPrefab;
 
     public bool ResultsReady { get; private set; }
 
@@ -163,15 +163,15 @@ public class PropagationGridSimulator : MonoBehaviour
     private void EnsureParentExists()
     {
         // Returns when a parent is already assigned
-        if (receiversParent != null)
+        if (debugVoxelsParent != null)
         {
             return;
         }
 
         // Creates a default parent object
-        GameObject parent = new GameObject("SimulatedReceivers");
+        GameObject parent = new GameObject("DebugVoxels");
         parent.transform.SetParent(transform, false);
-        receiversParent = parent.transform;
+        debugVoxelsParent = parent.transform;
     }
 
     // --------------------------------------------------
@@ -214,51 +214,51 @@ public class PropagationGridSimulator : MonoBehaviour
                     Vector3 localCenter = localGridOrigin + new Vector3((x + 0.5f) * voxelSizeMeters, (y + 0.5f) * voxelSizeMeters, (z + 0.5f) * voxelSizeMeters);
 
                     // Converts the local voxel center to world coordinates using transmitter rotation
-                    Vector3 center = settings.transmitter.position + settings.transmitter.rotation * localCenter;
+                    Vector3 centerWorldPosition = settings.transmitter.position + settings.transmitter.rotation * localCenter;
 
                     // Evaluates propagation inputs in Unity
                     string debugLabel = $"Voxel {x},{y},{z} Index={index}";
-                    float txGainDbi = settings.EvaluateTxGainDbi(center, debugLabel);
+                    float txGainDbi = settings.EvaluateTxGainDbi(centerWorldPosition, debugLabel);
                     // Counts building collisions and loss if enabled
                     int buildingCollisions = 0;
                     float buildingLossDb = 0f;
 
                     if (includeBuildingCollisions)
                     {
-                        buildingCollisions = settings.CountBuildingCollisions(center);
+                        buildingCollisions = settings.CountBuildingCollisions(centerWorldPosition);
                         buildingLossDb = buildingCollisions * settings.GetLossPerWallDb();
                     }
 
                     // Stores voxel data
-                    VoxelData sample = new VoxelData();
-                    sample.index = index;
-                    sample.gridX = x;
-                    sample.gridY = y;
-                    sample.gridZ = z;
-                    sample.centerWorldPosition = center;
-                    sample.buildingCollisions = buildingCollisions;
-                    sample.txPowerDbm = settings.txPowerDbm;
-                    sample.txGainDbi = txGainDbi;
-                    sample.rxGainDbi = settings.rxGainDbi;
+                    VoxelData voxel = new VoxelData();
+                    voxel.index = index;
+                    voxel.gridX = x;
+                    voxel.gridY = y;
+                    voxel.gridZ = z;
+                    voxel.centerWorldPosition = centerWorldPosition;
+                    voxel.buildingCollisions = buildingCollisions;
+                    voxel.txPowerDbm = settings.txPowerDbm;
+                    voxel.txGainDbi = txGainDbi;
+                    voxel.rxGainDbi = settings.rxGainDbi;
 
                     // Adds the voxel data to the list
-                    voxelsData.Add(sample);
+                    voxelsData.Add(voxel);
 
                     // Creates debug object if a prefab is assigned
-                    if (receiverDebugPrefab != null)
+                    if (voxelDebugPrefab != null)
                     {
-                        GameObject receiverObject = CreateReceiverObject(x, y, z, center);
+                        GameObject receiverObject = CreateVoxelDebugObject(x, y, z, centerWorldPosition);
 
                         VoxelReceiver receiver = receiverObject.AddComponent<VoxelReceiver>();
-                        receiver.data = sample;
+                        receiver.data = voxel;
                     }
 
                     // Stores voxel request data for Python
                     GridVoxelRequestDto voxelRequest = new GridVoxelRequestDto();
                     voxelRequest.index = index;
-                    voxelRequest.x = center.x;
-                    voxelRequest.y = center.y;
-                    voxelRequest.z = center.z;
+                    voxelRequest.x = centerWorldPosition.x;
+                    voxelRequest.y = centerWorldPosition.y;
+                    voxelRequest.z = centerWorldPosition.z;
                     voxelRequest.txGainDbi = txGainDbi;
                     voxelRequest.buildingCollisions = buildingCollisions;
                     voxelRequest.buildingLossDb = buildingLossDb;
@@ -285,23 +285,23 @@ public class PropagationGridSimulator : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates a debug receiver object for one voxel.
+    /// Creates a debug voxel object for one voxel.
     /// </summary>
-    private GameObject CreateReceiverObject(int x, int y, int z, Vector3 center)
+    private GameObject CreateVoxelDebugObject(int x, int y, int z, Vector3 centerWorldPosition)
     {
         // Instantiates the debug prefab if available
-        if (receiverDebugPrefab != null)
+        if (voxelDebugPrefab != null)
         {
-            GameObject receiverObject = Instantiate(receiverDebugPrefab, center, Quaternion.identity, receiversParent);
-            receiverObject.name = $"Rx_{x}_{y}_{z}";
-            return receiverObject;
+            GameObject debugVoxelObject = Instantiate(voxelDebugPrefab, centerWorldPosition, Quaternion.identity, debugVoxelsParent);
+            debugVoxelObject.name = $"VoxelDebug_{x}_{y}_{z}";
+            return debugVoxelObject;
         }
 
         // Creates an empty object when no prefab is assigned
-        GameObject emptyReceiver = new GameObject($"Rx_{x}_{y}_{z}");
-        emptyReceiver.transform.SetParent(receiversParent, false);
-        emptyReceiver.transform.position = center;
-        return emptyReceiver;
+        GameObject emptyDebugVoxel = new GameObject($"VoxelDebug_{x}_{y}_{z}");
+        emptyDebugVoxel.transform.SetParent(debugVoxelsParent, false);
+        emptyDebugVoxel.transform.position = centerWorldPosition;
+        return emptyDebugVoxel;
     }
 
     /// <summary>
@@ -328,10 +328,10 @@ public class PropagationGridSimulator : MonoBehaviour
             }
 
             // Copies Python results into voxel data
-            VoxelData sample = voxelsData[result.index];
-            sample.distanceMeters = result.distanceMeters;
-            sample.pathLossDb = result.pathLossDb;
-            sample.prxDbm = result.prxDbm;
+            VoxelData voxel = voxelsData[result.index];
+            voxel.distanceMeters = result.distanceMeters;
+            voxel.pathLossDb = result.pathLossDb;
+            voxel.prxDbm = result.prxDbm;
         }
     }
 

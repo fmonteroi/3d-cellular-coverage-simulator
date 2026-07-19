@@ -1,0 +1,62 @@
+\chapter{Conclusiones y trabajos futuros}
+\label{chap:conclusiones}
+
+En este capítulo se presentan las conclusiones obtenidas tras el desarrollo y la evaluación del simulador a partir de los objetivos planteados inicialmente. Además, se proponen distintas líneas de trabajo futuro para ampliar sus funcionalidades, mejorar el realismo de la simulación y aumentar las posibilidades de análisis.
+
+
+\section{Conclusiones}
+
+El estudio de la cobertura es fundamental para analizar el comportamiento de los sistemas de comunicaciones inalámbricas y conocer cómo se distribuye la señal en una zona determinada. Una herramienta tridimensional aporta una ventaja importante, ya que permite relacionar los valores calculados con la posición real de los elementos dentro del escenario. En entornos urbanos, la señal puede verse afectada por muchos factores, como la posición de las antenas, el patrón de radiación, los obstáculos, la altura de los receptores o el modelo de propagación utilizado.
+
+Este tipo de análisis puede realizarse modificando los parámetros de entrada y observando cómo afectan a los resultados obtenidos. En este proyecto se ha desarrollado un simulador tridimensional que representa visualmente la cobertura en un entorno urbano. Para ello, se ha combinado Unity para la parte visual e interactiva con Python para los cálculos de propagación y métricas del enlace.
+
+A partir del desarrollo realizado y de las pruebas obtenidas, se puede concluir que se han cumplido los objetivos planteados inicialmente:
+
+\begin{itemize}
+    \item Se ha construido un escenario urbano tridimensional basado en el Centro Universitario de Mérida, incluyendo edificios, vehículos, peatones y elementos del entorno. Esto permite analizar la cobertura en un escenario reconocible y no únicamente en un entorno genérico.
+
+    \item Se ha modelado una antena transmisora con diferentes patrones de radiación. Primero se implementó un modelo omnidireccional y posteriormente se incorporó una antena de tipo panel con un patrón reconstruido a partir de sus cortes horizontal y vertical.
+
+    \item Se ha implementado la reconstrucción tridimensional del patrón de radiación mediante distintos métodos. Las pruebas realizadas frente a MATLAB muestran que la reconstrucción mediante Vasiliadis con k = 2 reproduce exactamente los valores utilizados como referencia, por lo que el método utilizado por el simulador es el mismo que el utilizado en un software real funcional.
+
+    \item Se ha conseguido combinar Unity con el simulador externo desarrollado en Python. Unity se encarga de la interacción, la representación del escenario y la visualización de resultados, mientras que Python realiza los cálculos de propagación y métricas del enlace, como la potencia recibida y la SNR.
+
+    \item Se ha representado la cobertura mediante una rejilla tridimensional de vóxeles y un mapa de calor 3D. Además, se ha añadido una vista 2D por capas de altura, lo que facilita el análisis de la potencia recibida en zonas concretas del escenario y permite estudiar la influencia de la altura.
+
+    \item Se han añadido receptores móviles con rutas definidas dentro del campus. Gracias a ellos, se ha podido analizar la evolución de la cobertura durante el movimiento y comprobar que la señal no depende únicamente de la distancia al transmisor, sino también del patrón de radiación, los obstáculos y la posición del receptor.
+
+    \item Se ha implementado la exportación automática de resultados en CSV y la generación de gráficas. Esto permite conservar los datos de cada ejecución, analizar los resultados fuera de Unity y comparar distintas configuraciones de simulación.
+
+    \item También se han incorporado mejoras de rendimiento para facilitar la ejecución del simulador en equipos con distintas prestaciones. Entre ellas se encuentra la generación del mapa de calor mediante \textit{chunks}, lo que permite dividir la malla en bloques y gestionar mejor su representación. Además, se han añadido modos de rendimiento para ocultar elementos secundarios del escenario cuando sea necesario, junto con una limitación de FPS para evitar un consumo innecesario de recursos.
+\end{itemize}
+
+Finalmente, se puede concluir que se han cumplido los objetivos propuestos al inicio del proyecto. El simulador permite configurar distintos escenarios de prueba, representar la cobertura de forma tridimensional, analizar receptores móviles, comparar configuraciones y exportar los resultados obtenidos para su estudio posterior.
+
+\par\medskip
+    \textbf{Nota: Yo incluiría aquí una reflexión personal sobre cómo este trabajo ha supuesto un reto y refleja el trabajo de un ingeniero: resolver un problema que requiere combinar conocimientos de distintos campos. Ha sido necesario investigar previamente los conceptos teóricos, construir un escenario 3D, trabajar con un tipo de programación diferente, aplicar técnicas de optimización, diseño... Aunque no sé si esto sobra aquí, si ponerlo en un apartado específico o si no se puede poner ya que es personal y no es neutro formal como el resto del trabajo.}
+\par\medskip
+
+\section{Trabajos futuros}
+
+Debido al limitado tiempo del proyecto, no se han podido implementar todas las funcionalidades deseadas. A partir del simulador desarrollado, se plantean varias líneas de mejora que permitirían aumentar el realismo de la simulación, ampliar las posibilidades de análisis y hacer la herramienta más flexible.
+
+\begin{itemize}
+    \item \textbf{Pérdidas por materiales:} la primera mejora directa sería implementar los distintos materiales presentes en los edificios, además del hormigón, aplicando pérdidas distintas según el material atravesado. Además, podrían añadirse pérdidas adicionales al propagarse por el interior de los edificios, ya que ETSI TR 138 901 incluye tanto pérdidas por penetración en materiales como una pérdida interior dependiente de la profundidad dentro del edificio \cite{etsi138901}.
+
+    \item \textbf{Receptor móvil controlable por el usuario:} otra mejora muy útil sería añadir un receptor que pueda moverse libremente por el escenario. Esto permitiría consultar la cobertura en puntos concretos elegidos por el usuario, en lugar de depender únicamente de rutas predefinidas. Esta funcionalidad requeriría implementar control de movimiento y físicas, ya que el escenario tridimensional cuenta con relieve y sería necesario gestionar correctamente las colisiones con el suelo, la gravedad y el desplazamiento del receptor sobre el terreno.
+
+    \item \textbf{Modificación de la posición de la antena:} actualmente la antena se encuentra en una posición fija dentro del escenario. Como trabajo futuro, sería interesante permitir modificar su ubicación desde la interfaz, para estudiar cómo cambia la cobertura al colocar el transmisor en distintos puntos del campus.
+
+    \item \textbf{Múltiples tipos de antenas:} actualmente el simulador permite utilizar una antena omnidireccional y una antena de tipo panel reconstruida a partir de sus cortes horizontal y vertical. Como mejora futura, podrían añadirse más tipos de antenas reales, permitiendo cargar y reconstruir patrones con características distintas. Esto permitiría comparar antenas con diferentes ganancias y patrones de radiación dentro del mismo escenario.
+
+    \item \textbf{Incorporación de varias antenas transmisoras:} otra línea de mejora sería permitir el uso de más de una antena en el escenario. Esto permitiría estudiar cómo cambia la cobertura al añadir varios transmisores, analizar zonas cubiertas por más de una antena e introducir interferencias entre ellas.
+
+    \item \textbf{\textit{Beamforming:}} también podría añadirse algún tipo de \textit{beamforming}. Esta técnica permite concentrar la energía transmitida o recibida en una dirección concreta mediante un array de antenas, aumentando la ganancia respecto a una transmisión omnidireccional \cite{7342886}. En el simulador, esto permitiría orientar dinámicamente el haz de radiación hacia determinadas zonas o receptores, estudiando técnicas más cercanas a sistemas celulares actuales.
+
+    \par\medskip
+    \textbf{Nota: Esto lo leí en el TFG que me pasasteis como referencia y José Javier dijo que podíamos estudiarlo llegado el momento, pero jamás llegamos a volver a hablarlo, por lo que lo he metido como trabajo futuro. He cogido la referencia del TFG para sacar la definición también de ahí.}
+    \par\medskip
+
+    \item \textbf{Reconstrucción del patrón mediante \textit{deep learning}:} una mejora futura sería añadir un método de reconstrucción basado en \textit{deep learning}. MATLAB utiliza esté método mediante la función \texttt{patternFromAI}, que permite reconstruir un patrón tridimensional a partir de dos cortes bidimensionales utilizando un modelo preentrenado \cite{mathworks_patternfromai}. Esto podría mejorar la reconstrucción en antenas con patrones más complejos, donde los métodos tradicionales como Gil o Vasiliadis pueden perder información.
+\end{itemize}
+

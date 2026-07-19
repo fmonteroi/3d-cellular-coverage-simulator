@@ -24,9 +24,6 @@ public class WaypointMover : MonoBehaviour
     /// <summary>
     /// Moves the object towards the current waypoint.
     /// </summary>
-    /// <summary>
-    /// Moves the object towards the current waypoint.
-    /// </summary>
     void Update()
     {
         if (path == null || path.points == null || path.points.Count == 0)

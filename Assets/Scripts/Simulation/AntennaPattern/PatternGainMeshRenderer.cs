@@ -46,27 +46,14 @@ public class PatternGainMeshRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Rebuilds the mesh when Inspector values change during play mode.
-    /// </summary>
-    void OnValidate()
-    {
-        if (!Application.isPlaying)
-        {
-            return;
-        }
-
-        BuildMesh();
-    }
-
-    /// <summary>
     /// Clears the generated mesh when the renderer is disabled.
     /// </summary>
     void OnDisable()
     {
-        MeshFilter mf = GetComponent<MeshFilter>();
-        if (mf != null)
+        MeshFilter meshFilter = GetComponent<MeshFilter>();
+        if (meshFilter != null)
         {
-            mf.sharedMesh = null;
+            meshFilter.sharedMesh = null;
         }
 
 

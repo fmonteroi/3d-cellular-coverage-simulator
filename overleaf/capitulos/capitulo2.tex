@@ -1,0 +1,197 @@
+\chapter{Análisis y descripción del proyecto}
+\label{chap:analisis_y_descripcion}
+
+En este capítulo se describe el planteamiento general del proyecto. En primer lugar, se analiza el problema que se pretende resolver y se definen los requisitos principales del sistema. A continuación, se presentan las tecnologías utilizadas durante el desarrollo, la planificación seguida y la viabilidad del proyecto.
+
+\section{Análisis del problema}
+
+El punto de partida de este proyecto es un simulador ya existente desarrollado en Python \cite{9932595}, disponible públicamente en GitHub mediante el repositorio \url{https://github.com/Jricopal/PythonSimulator_v6}, capaz de realizar cálculos de propagación y obtener métricas del enlace. Sin embargo, este simulador no dispone de una representación tridimensional interactiva del escenario ni de una forma visual de relacionar los resultados calculados con la posición real de los elementos del entorno.
+
+El análisis de cobertura en un escenario urbano no depende únicamente de la distancia entre el transmisor y el receptor. También influyen otros factores como la altura, la orientación respecto al patrón de radiación de la antena, la presencia de edificios, el modelo de propagación utilizado y el movimiento de los receptores. Por este motivo, analizar los resultados únicamente mediante valores numéricos o representaciones bidimensionales puede dificultar la interpretación espacial de la cobertura.
+
+A partir de esta necesidad, se plantea el desarrollo de un simulador tridimensional que permita representar visualmente la cobertura en un escenario urbano. La idea inicial consiste en aprovechar el simulador Python existente para realizar los cálculos de propagación, añadiendo el factor visual de Unity que permite interpretar los resultados dentro de un entorno 3D.
+
+Como transmisor se utiliza una antena de tipo panel del fabricante Andrew \cite{andrew_hwxx_product}, de la que se dispone de sus cortes horizontal y vertical del patrón de radiación. Por ello, se plantea buscar métodos que permitan reconstruir una aproximación tridimensional del patrón a partir de esos cortes bidimensionales.
+
+Para representar la cobertura en el escenario, se plantea dividir el espacio en una rejilla tridimensional de puntos. Cada punto de esta rejilla actúa como una posición de recepción para la que se calculan las métricas del enlace. Con los resultados obtenidos, Unity puede construir un mapa de calor 3D que muestre la distribución de potencia recibida en distintas zonas y alturas del escenario.
+
+Además de estudiar la cobertura en puntos fijos de la rejilla, también se plantea añadir receptores móviles. Estos receptores recorren rutas definidas dentro del escenario y permiten analizar cómo varían métricas como la potencia recibida o la SNR durante el movimiento. De esta forma, el simulador no solo permite observar una distribución estática de cobertura, sino también estudiar la evolución del enlace en recorridos concretos.
+
+Por tanto, se busca crear un simulador tridimensional completamente funcional en Unity, aprovechando el simulador Python existente para realizar los cálculos de propagación y métricas del enlace. Unity actúa como la parte visual e interactiva del sistema, encargándose de representar el escenario, la antena, los mapas de calor y los receptores móviles. De esta forma, el usuario puede modificar parámetros, observar la cobertura en distintas zonas del escenario, seguir receptores móviles y exportar los datos obtenidos para analizarlos posteriormente.
+
+\par\medskip
+\textbf{Nota: No sé muy bien si esto sirve como "Análisis del problema"; al final, fue lo que hablamos en la primera reunión, pero quizás debería iniciarlo como algo más genérico sobre las telecomunicaciones.}
+\par\medskip
+
+\section{Requisitos del sistema}
+
+A partir del problema planteado y de los objetivos explicados en el capítulo anterior, se definen una serie de requisitos que debe cumplir el simulador. Estos requisitos se dividen en requisitos funcionales y no funcionales. A continuación, se muestran los requisitos funcionales definidos para el sistema:
+
+\begin{longtable}{@{}p{0.10\textwidth}p{0.25\textwidth}p{0.58\textwidth}@{}}
+    \toprule
+    \textbf{ID} & \textbf{Requisito} & \textbf{Descripción}\\
+    \midrule
+    \endfirsthead
+
+    \toprule
+    \textbf{ID} & \textbf{Requisito} & \textbf{Descripción}\\
+    \midrule
+    \endhead
+
+    \midrule
+    \multicolumn{3}{r}{Continúa en la siguiente página}\\
+    \endfoot
+
+    \bottomrule
+    \addlinespace[0.4em]
+    \caption{Requisitos funcionales}
+    \label{tab:requisitos_funcionales}\\
+    \endlastfoot
+
+    \texttt{RF1} & Escenario 3D & El sistema debe permitir representar un escenario urbano tridimensional donde se puedan situar los elementos necesarios para la simulación.\\
+    \texttt{RF2} & Antena transmisora & El sistema debe incluir una antena dentro del escenario y permitir utilizarla como transmisor de la simulación.\\
+    \texttt{RF3} & Patrones de radiación & El sistema debe permitir trabajar con distintos tipos de patrón de radiación para estudiar cómo afectan a la cobertura.\\
+    \texttt{RF4} & Reconstrucción del patrón & El sistema debe permitir obtener una aproximación tridimensional del patrón de radiación de una antena a partir del CSV con los cortes bidimensionales.\\
+    \texttt{RF5} & Comunicación Unity-Python & El sistema debe permitir la comunicación entre Unity y el simulador Python para intercambiar los datos necesarios durante la simulación.\\
+    \texttt{RF6} & Representación de cobertura & El sistema debe representar la cobertura en el escenario mediante una rejilla de puntos que actúen como posiciones de recepción.\\
+    \texttt{RF7} & Receptores móviles & El sistema debe incluir receptores móviles y mostrar sus métricas durante la simulación.\\
+    \texttt{RF8} & Exportación de datos & El sistema debe exportar los resultados obtenidos para facilitar su análisis posterior.\\
+    \texttt{RF9} & Interfaz de configuración & El sistema debe incluir una interfaz de configuración inicial para modificar los principales parámetros de la simulación sin necesidad de modificar el código.\\
+\end{longtable}
+
+\par\medskip
+\textbf{Nota: Esta tabla la puse como longtable porque al ser tan larga no se divide bien entre páginas, supongo que valen ambos formatos (tabularx/longtable).}
+\par\medskip
+
+A continuación, se muestran los requisitos no funcionales definidos para el sistema.
+
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{@{}llX@{}}
+        \toprule
+        \textbf{ID} & \textbf{Requisito} & \textbf{Descripción}\\
+        \midrule
+        \texttt{RNF1} & Facilidad de uso & La aplicación debe ser clara y simple para que el usuario pueda configurar y ejecutar una simulación desde una interfaz gráfica.\\
+        \texttt{RNF2} & Organización de resultados & Los resultados exportados deben guardarse de forma ordenada, separando los datos generados en cada ejecución.\\
+        \texttt{RNF3} & Rendimiento & El sistema debe mantener un rendimiento asumible para un computador personal durante la visualización y ejecución de la simulación.\\
+        \texttt{RNF4} & Comunicación automática & La comunicación entre Unity y Python debe realizarse sin que el usuario tenga que intervenir durante la ejecución de la aplicación.\\
+        \texttt{RNF5} & Ejecución independiente & La aplicación debe poder ejecutarse desde un archivo ejecutable que incluya todos los recursos necesarios para su funcionamiento sin requerir instalaciones adicionales.\\
+        \bottomrule
+    \end{tabularx}
+    \caption{Requisitos no funcionales}
+    \label{tab:requisitos_no_funcionales}
+\end{table}
+
+\section{Tecnologías empleadas}
+
+Para el desarrollo del proyecto se utilizan distintas tecnologías, cada una para una parte concreta del simulador:
+
+\begin{itemize}
+    \item \textbf{Unity:} es un motor de desarrollo utilizado para crear videojuegos, aplicaciones en tiempo real y entornos interactivos \cite{unity}. Aunque es conocido por los videojuegos, también destaca en el desarrollo de proyectos 3D para distintos sectores. En este proyecto se utiliza como base para ejecutar la simulación y representar el escenario tridimensional.
+
+    \item \textbf{C\#:} es el lenguaje utilizado para programar en Unity. Aunque Unity permite utilizar otros lenguajes mediante herramientas o \textit{plugins} externos, C\# es el lenguaje principal del motor y el que se utiliza en su documentación oficial. En este proyecto se emplea C\# en todos los \textit{scripts} encargados de controlar la ejecución del simulador.
+
+    \item \textbf{Python:} se utiliza porque el simulador externo empleado en el proyecto está desarrollado en este lenguaje. En este trabajo se utiliza como parte encargada de realizar los cálculos de propagación y métricas del enlace. Además, también se aprovecha para generar gráficas a partir de los datos exportados.
+
+    \item \textbf{Blender:} es un software libre utilizado para la creación de modelos 3D \cite{blender}. En este proyecto se utiliza para crear y texturizar el escenario, la antena y los modelos de colisión asociados a los edificios.
+
+    \item \textbf{Visual Studio Code:} es un editor de código abierto utilizado para programar en distintos lenguajes \cite{vscode}. En este proyecto se emplea para trabajar con los \textit{scripts} de C\# y Python.
+
+    \item \textbf{Photoshop:} es una herramienta de edición y creación de imágenes \cite{photoshop}. En este proyecto se utiliza para crear los iconos del simulador y retocar las texturas de los materiales del escenario.
+\end{itemize}
+
+
+\section{Planificación del proyecto}
+
+La planificación del proyecto se realiza de forma incremental. En lugar de desarrollar todas las funcionalidades al mismo tiempo, se construye el simulador por fases, ampliando progresivamente una primera versión funcional. Esto permite comprobar cada parte antes de continuar con la siguiente y añadir mejoras según las necesidades que surgen durante el desarrollo.
+
+El desarrollo del proyecto se divide en las siguientes fases o incrementos:
+
+\begin{enumerate}
+    \item \textbf{Estudio previo:} en esta fase se analiza el simulador Python existente, cómo se usa y qué partes son necesarias para este proyecto. También se estudian los métodos existentes para la reconstrucción del patrón de radiación a partir de cortes bidimensionales y se repasan conceptos generales de antenas, propagación y transmisión de datos.
+
+    \item \textbf{Preparación del proyecto:} una vez realizado el estudio previo, se crea el proyecto en Unity y se prepara una primera escena de pruebas con una antena de tipo panel, un entorno urbano sencillo y receptores móviles iniciales. También se define la organización de carpetas que se utilizará durante el desarrollo. Esta fase sirve como puesta en marcha del proyecto.
+
+    \item \textbf{Reconstrucción del patrón de radiación:} se implementa la reconstrucción del patrón de radiación de la antena a partir de sus cortes bidimensionales. También se añade su representación tridimensional dentro de la escena para poder comprobar visualmente la forma del patrón utilizado en la simulación.
+
+    \item \textbf{Integración de Unity y Python:} se crea un puente entre Unity y el simulador Python mediante una estructura TCP cliente-servidor. Además, se añade una versión portable de Python al proyecto para que la aplicación pueda ejecutar el simulador sin depender de una instalación externa.
+
+    \item \textbf{Mapa de calor 3D:} se desarrolla una representación tridimensional de la cobertura a partir de una rejilla de puntos de recepción. Esta fase permite visualizar los resultados del simulador externo dentro del escenario tridimensional.
+
+    \item \textbf{Receptores móviles:} se añaden receptores con diferentes recorridos dentro del escenario. También se añade la visualización de sus métricas en tiempo real durante la simulación.
+
+    \item \textbf{Adaptación del escenario al Centro Universitario de Mérida:} en esta fase, se construye una representación tridimensional del campus universitario a tamaño real y se sustituye el escenario inicial de pruebas.
+
+    \item \textbf{Mejoras visuales y de rendimiento:} se aplican mejoras visuales al mapa de calor y a la visualización de cobertura de los receptores móviles. Además, se incorporan mejoras de rendimiento para mejorar la fluidez de la aplicación.
+
+    \item \textbf{Exportación de datos y generación de gráficas:} se implementa la exportación de resultados en CSV, el guardado de la configuración de cada ejecución y la generación automática de gráficas mediante Python.
+
+    \item \textbf{Documentación y revisión final:} se redacta la memoria del proyecto, se preparan las figuras necesarias para la documentación y se realizan pruebas finales para detectar y corregir errores de la aplicación.
+\end{enumerate}
+
+Al finalizar cada fase, se realizan pruebas individuales para comprobar que la funcionalidad implementada funciona correctamente antes de continuar con el siguiente incremento. Una vez completados todos los incrementos, en la última fase, se realizan las pruebas finales descritas en el Capítulo \ref{chap:pruebas_y_resultados}. Estas pruebas permiten validar el funcionamiento global del simulador, comprobar los resultados obtenidos y comparar distintas configuraciones de simulación.
+
+
+\section{Viabilidad del proyecto}
+
+La viabilidad del proyecto se analiza teniendo en cuenta el tiempo de desarrollo, el coste económico estimado y los recursos necesarios para llevarlo a cabo. Para ello, se realiza primero una estimación de horas por cada una de las fases del proyecto, obteniendo así una aproximación del tiempo total de trabajo necesario.
+
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{@{}lXr@{}}
+        \toprule
+        \textbf{Fase} & \textbf{Descripción} & \textbf{Horas} \\
+        \midrule
+        1 & Estudio previo & 25 \\
+        2 & Preparación del proyecto & 20 \\
+        3 & Reconstrucción y visualización del patrón de radiación & 20 \\
+        4 & Integración de Unity y Python & 15 \\
+        5 & Mapa de calor 3D & 25 \\
+        6 & Receptores móviles & 20 \\
+        7 & Adaptación del escenario al Centro Universitario de Mérida & 80 \\
+        8 & Mejoras visuales y de rendimiento & 35 \\
+        9 & Exportación de datos y generación de gráficas & 10 \\
+        10 & Documentación y revisión final & 80 \\
+        \midrule
+        \textbf{Total} & & \textbf{330} \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Estimación de horas por fase del proyecto}
+    \label{tab:estimacion_horas_proyecto}
+\end{table}
+
+Como se puede ver en la Tabla \ref{tab:estimacion_horas_proyecto}, el tiempo total estimado para el desarrollo del proyecto es de 330 horas. El proyecto se desarrolla durante un periodo aproximado de cinco meses. Considerando cuatro semanas por mes y cinco días de trabajo por semana, se obtiene un total de 100 días para la realización del proyecto. A partir de las horas totales estimadas, la dedicación media del proyecto es de aproximadamente 3,3 horas diarias durante cinco meses.
+
+Para estimar el coste del proyecto, se toma como referencia el XVIII Convenio colectivo estatal de empresas de consultoría, tecnologías de la información y estudios de mercado, publicado en el BOE \cite{boe_convenio_consultoria}. Se asume una clasificación en el Área 3, Grupo C, Nivel 3, ya que el proyecto implica tareas de desarrollo de software, programación e integración realizadas con autonomía técnica, aunque bajo la supervisión de ambos tutores.
+
+Según las tablas salariales publicadas en el convenio, esta categoría tiene un salario mínimo de 22.503,15 euros brutos anuales. Teniendo en cuenta una jornada máxima anual de 1.800 horas, se puede calcular el coste por hora:
+
+\[
+\frac{22503,15\ \text{€}}{1800\ \text{horas}} = 12,50\ \text{€/h}
+\]
+
+A partir del coste por hora y la estimación de 330 horas, se obtiene que el coste estimado en salarios para el desarrollo del proyecto es de aproximadamente 4.125,58 euros brutos.
+
+Además del coste de personal, se tienen en cuenta las herramientas utilizadas durante el desarrollo. La mayoría de las tecnologías empleadas son gratuitas; en el caso de Unity, se utiliza la licencia personal, de coste cero, mientras no se superen los 200.000 dólares de ingresos en los últimos 12 meses \cite{unity_pricing_updates}. 
+
+El único coste de software considerado es Photoshop, utilizado para la creación de iconos y el retoque de texturas. Su coste mensual es de 26,43 euros \cite{photoshop}. Al utilizarse durante los cinco meses de desarrollo, el coste total asociado es:
+
+\[
+26,43\ \text{€}/\text{mes} \cdot 5\ \text{meses} = 132,15\ \text{€}
+\]
+
+También debe tenerse en cuenta que tanto el equipo utilizado para el desarrollo como el sistema operativo Windows tienen un coste asociado. Sin embargo, no se incluyen en el cálculo económico porque se considera que ya estaban disponibles antes del inicio del proyecto.
+
+Sumando el coste estimado del  personal y el coste de Photoshop, se obtiene el coste total aproximado del proyecto:
+
+\[
+4125,58\ \text{€} + 132,15\ \text{€} = 4257,73\ \text{€}
+\]
+
+Por tanto, el coste total estimado del proyecto es de 4.257,73 euros. Este valor corresponde principalmente al tiempo de desarrollo, ya que el coste del software es bajo y el equipo de trabajo se considera disponible desde el inicio. Al reutilizar el simulador Python existente y herramientas gratuitas, el proyecto resulta viable desde el punto de vista económico.
+
+Respecto a la viabilidad temporal, el simulador también es viable porque se apoya en tecnologías muy utilizadas como Unity, C\# y Python. Además, al incluir una versión portable de Python dentro del proyecto, se evita depender de instalaciones externas en el dispositivo del usuario. También se trata de una herramienta flexible, ya que permite modificar los principales parámetros de la simulación. Esto facilita su adaptación a nuevos escenarios o a tecnologías futuras sin tener que cambiar la estructura del simulador.
+
+\par\medskip
+    \textbf{Nota: Cuando introduces la ganancia de los receptores en los vehículos, se especifica V2X y, en el peatón, 5G FR1, porque para los valores por defecto usamos eso. No obstante, si el usuario, en un futuro, quisiese usar otra tecnología que use otro ancho de banda, ganancia o lo que sea, podría cambiarlo, aunque en la etiqueta ponga esa tecnología. ¿Tiene sentido, no? También puedo quitar la tecnología de la etiqueta para que sea más estándar.}
+\par\medskip

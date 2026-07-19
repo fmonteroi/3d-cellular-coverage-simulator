@@ -1,0 +1,16 @@
+\renewcommand{\keywords}{{\itshape \bfseries Keywords - }}
+\chapter*{Abstract} 
+%\addcontentsline{toc}{chapter}{Abstract} 
+
+Coverage analysis makes it possible to study how a signal behaves in a given environment and to determine whether receivers have suitable conditions for communication. This analysis depends on several factors, such as the distance between the transmitter and the receiver, the transmission power, the antenna radiation pattern, the propagation model, height, and the presence of obstacles. For this reason, a three-dimensional representation can improve the interpretation of the results and show how the signal varies across different areas and heights of the scenario.
+
+This project presents the development of a three-dimensional simulator for coverage analysis in an urban environment. The application combines Unity, which is responsible for the graphical representation and user interaction, with a simulator developed in Python, which performs the propagation and link-metric calculations. Propagation-loss models such as FSPL and ABG are used, along with additional losses associated with buildings.
+
+The simulator reconstructs an approximation of the three-dimensional radiation pattern of an antenna from its horizontal and vertical cuts. It also represents the received power through three-dimensional heat maps and two-dimensional views divided into height layers. In addition, it uses mobile receivers, such as vehicles and pedestrians, to analyse the evolution of the received power and the signal-to-noise ratio (SNR) along different routes.
+
+The simulator has been developed using a three-dimensional representation of the Centro Universitario de Mérida created for this project. The results obtained make it possible to see the influence of the radiation pattern, height, simulation parameters, and obstacles on coverage. In this way, the simulator provides a visual and interactive tool for comparing different configurations, analysing coverage, and obtaining data that can later be analysed using graphs.
+
+
+%\vspace{5mm} Entre parrafo y parrafo
+
+\keywords{3D simulation, propagation channel, wireless networks, vehicular communications, Unity, coverage, radiation pattern, SNR.}

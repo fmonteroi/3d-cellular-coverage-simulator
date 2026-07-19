@@ -8,7 +8,7 @@ public static class SimulationConfig
     // Reconstructor options
     public static PatternGainReconstructor.ReconstructionMethod reconstructionMethod = PatternGainReconstructor.ReconstructionMethod.Vasiliadis2005;
     public static float k = 2f;
-    public static float omniMaxGainDbi = 0f;
+    public static float omniMaxGainDbi = 16f;
 
     // Propagation settings
     public static float txPowerDbm = 30f;
@@ -22,7 +22,7 @@ public static class SimulationConfig
     // Grid configuration
     public static Vector3Int gridSizeMeters = new Vector3Int(300, 40, 400);
     public static float voxelSizeMeters = 2f;
-    public static bool buildingCollisions = true;
+    public static bool includeBuildingCollisions = true;
 
     // Mobile receiver configuration
     public static float vehicularRxGainDbi = 3f;

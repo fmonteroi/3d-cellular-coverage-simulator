@@ -1,0 +1,173 @@
+
+\documentclass[a4paper,12pt,openany,oneside]{book}  
+
+% ==========================================
+% 1. PAQUETES (Librerías)
+% ==========================================
+
+% --- Codificación e Idioma ---
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-tabla]{babel}
+
+% --- Gráficos y Figuras ---
+\usepackage{graphicx} 
+\usepackage{tikz,color}
+\usepackage{pgf-pie} 
+\usepackage{wrapfig}    
+\usepackage[scriptsize]{caption} 
+\usepackage{subcaption}
+\usepackage{float}    
+\usepackage{adjustbox}
+
+
+\usepackage{amsmath} 
+\usepackage{amsthm}  
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{bm}
+
+% --- Tablas (Fusionado) ---
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{rotating}
+\usepackage{lscape}
+\usepackage{csvsimple}
+\usepackage[section]{placeins}
+
+% --- Otros ---
+\usepackage{lastpage}
+\usepackage{pdfpages}
+\usepackage{url}
+\usepackage{eurosym}
+\usepackage[ruled,noline,linesnumbered,spanish]{algorithm2e}
+\usepackage{appendix}
+\usepackage{epstopdf} 
+
+% --- Hipervínculos 
+\usepackage[hidelinks]{hyperref} 
+
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 % Para tildes en código
+}
+
+\lstset{style=mystyle}
+\renewcommand{\lstlistingname}{Listado}
+
+
+\renewcommand{\contentsname}{Índice de contenido}
+\renewcommand{\chaptername}{Capítulo}            
+\renewcommand{\bibname}{Referencias} 
+\renewcommand{\listfigurename}{Índice de figuras}
+\renewcommand{\listtablename}{Índice de tablas}
+\renewcommand{\figurename}{Figura}
+\renewcommand{\tablename}{Tabla}
+\renewcommand{\arraystretch}{1.25}
+
+% --- Algoritmos / Pseudocódigo ---
+\SetKwInput{KwIn}{Entrada}
+\SetKwInput{KwOut}{Salida}
+\SetKwFor{For}{para}{hacer}{fin~para}
+\SetAlgoNlRelativeSize{-1}
+\SetAlCapSkip{0.5em}
+\DontPrintSemicolon
+\SetAlgoSkip{bigskip}
+
+\addto\captionsspanish{\renewcommand{\appendixname}{Anexo}}
+\renewcommand{\appendixtocname}{Anexos}
+\renewcommand{\appendixpagename}{Anexos}
+
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}m{#1}}
+\providecommand{\keywords}[1]{\textbf{\textit{Keywords---}} #1}
+
+\setlength{\parskip}{5pt}
+
+\begin{document}
+
+
+\include{portada/portadaCUM}
+\cleardoublepage
+\include{portada/portadaCUMDatos} 
+\cleardoublepage
+
+% --- Páginas Iniciales (Romanos) ---
+\pagestyle{plain}
+\pagenumbering{Roman} 
+
+
+\include{paginasiniciales/agradecimientos}
+\cleardoublepage
+
+\include{paginasiniciales/resumen}
+\cleardoublepage
+
+\include{paginasiniciales/abstract}
+\cleardoublepage
+
+% --- Índices ---
+\tableofcontents
+
+\cleardoublepage
+\addcontentsline{toc}{chapter}{Índice de figuras}
+\listoffigures
+
+\cleardoublepage
+\addcontentsline{toc}{chapter}{Índice de tablas}
+\listoftables
+\cleardoublepage
+
+\pagenumbering{arabic}
+
+
+\include{capitulos/capitulo1}
+\include{capitulos/capitulo2}
+\include{capitulos/capitulo3}
+\include{capitulos/capitulo4}
+\include{capitulos/capitulo5}
+\include{capitulos/capitulo6}
+\include{capitulos/capitulo7} 
+
+% --- Bibliografía ---
+\addcontentsline{toc}{chapter}{Referencias}
+\pagestyle{plain}
+
+%  carpeta 'bibliografia'
+%se llame 'referencias.bib'
+\nocite{*}
+\bibliography{bibliografia/referencias}{} 
+\bibliographystyle{ieeetr} % Estilo de ingeniería (números [1], [2])
+
+% --- Anexos ---
+\appendix
+\include{capitulos/anexos}
+
+\end{document}

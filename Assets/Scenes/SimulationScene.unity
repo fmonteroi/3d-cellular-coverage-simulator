@@ -2222,7 +2222,7 @@ MonoBehaviour:
   patternViewZoomSlider: {fileID: 1491540929}
   patternViewRotationSlider: {fileID: 1289003227}
   patternViewElevationSlider: {fileID: 476519372}
-  prxVoxelRenderer: {fileID: 1184703508}
+  voxelRendererObject: {fileID: 1184703508}
   patternMeshRenderer: {fileID: 676777032}
   cameraText: {fileID: 1987626659}
   receivers:
@@ -2533,7 +2533,7 @@ GameObject:
   m_Component:
   - component: {fileID: 254893647}
   m_Layer: 0
-  m_Name: SimulatedReceivers
+  m_Name: DebugVoxelsParent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7689,7 +7689,7 @@ MonoBehaviour:
   buildingLayerMask:
     serializedVersion: 2
     m_Bits: 8
-  showDebug: 0
+  showDebug: 1
 --- !u!1 &934438793
 GameObject:
   m_ObjectHideFlags: 0
@@ -9322,7 +9322,7 @@ GameObject:
   - component: {fileID: 1184703509}
   - component: {fileID: 1184703510}
   m_Layer: 6
-  m_Name: PrxVoxelRenderer
+  m_Name: VoxelRendererObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9359,8 +9359,8 @@ MonoBehaviour:
   voxelMaterial: {fileID: 2100000, guid: d1a94ce66fd0b854ab062d231c4ed04e, type: 2}
   chunkSize: 10
   minAlpha: 0.01
-  maxAlpha: 0.1
-  alphaExponent: 3
+  maxAlpha: 0.3
+  alphaExponent: 2
   visibilityThreshold: 0
 --- !u!1 &1210782567
 GameObject:
@@ -12339,7 +12339,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ReceiverResultsManager
   patternReconstructor: {fileID: 1874156725}
-  emissionPoint: {fileID: 676777034}
+  transmitter: {fileID: 676777034}
   targets:
   - receiverType: 0
     receiver: {fileID: 1450830551}
@@ -15136,11 +15136,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PatternGainReconstructor
   fileName: HWXX-6516DS1-VTM_Port 1 +45_00DT_1785.csv
-  method: 2
+  method: 1
   k: 2
   omniPowerP: 2
   omniFloor: 0
-  omniMaxGainDbi: 15
+  omniMaxGainDbi: 16
+  logCutSamples: 1
 --- !u!1 &1882763098
 GameObject:
   m_ObjectHideFlags: 0
@@ -16624,14 +16625,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PropagationGridSimulator
   settings: {fileID: 917592777}
   bridgeService: {fileID: 123601241}
-  receiversParent: {fileID: 254893647}
+  debugVoxelsParent: {fileID: 254893647}
   voxelRenderer: {fileID: 1184703510}
   thresholdSlider: {fileID: 1100288389}
   loadingPanel: {fileID: 1134429408}
-  gridSizeMeters: {x: 50, y: 50, z: 50}
-  voxelSizeMeters: 1
+  gridSizeMeters: {x: 2, y: 2, z: 2}
+  voxelSizeMeters: 0.1
   includeBuildingCollisions: 1
-  receiverDebugPrefab: {fileID: 0}
+  voxelDebugPrefab: {fileID: 0}
   voxelsData: []
 --- !u!4 &2065136254
 Transform:

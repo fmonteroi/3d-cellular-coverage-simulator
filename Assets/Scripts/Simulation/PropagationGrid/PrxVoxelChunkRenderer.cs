@@ -99,37 +99,37 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         for (int i = 0; i < voxels.Count; i++)
         {
             // Gets the current voxel
-            VoxelData sample = voxels[i];
+            VoxelData voxel = voxels[i];
 
             // Computes which chunk contains this voxel
             Vector3Int chunkCoord = new Vector3Int(
-                sample.gridX / chunkSize,
-                sample.gridY / chunkSize,
-                sample.gridZ / chunkSize);
+                voxel.gridX / chunkSize,
+                voxel.gridY / chunkSize,
+                voxel.gridZ / chunkSize);
 
             // Stores the voxel list of the current chunk
-            List<VoxelData> chunkVoxelsList = null;
+            List<VoxelData> chunkVoxels = null;
 
             // Gets the existing chunk list when available
             if (chunks.ContainsKey(chunkCoord))
             {
-                chunkVoxelsList = chunks[chunkCoord];
+                chunkVoxels = chunks[chunkCoord];
             } // Creates a new voxel list for this chunk otherwise
             else
             {
-                chunkVoxelsList = new List<VoxelData>();
-                chunks.Add(chunkCoord, chunkVoxelsList);
+                chunkVoxels = new List<VoxelData>();
+                chunks.Add(chunkCoord, chunkVoxels);
             }
 
             // Adds the current voxel to its chunk
-            chunkVoxelsList.Add(sample);
+            chunkVoxels.Add(voxel);
         }
 
         // Creates one mesh object per chunk
         foreach (Vector3Int chunkCoord in chunks.Keys)
         {
-            List<VoxelData> chunkVoxelsList = chunks[chunkCoord];
-            CreateChunkObject(chunkCoord, chunkVoxelsList, MinPrx, MaxPrx);
+            List<VoxelData> chunkVoxels = chunks[chunkCoord];
+            CreateChunkObject(chunkCoord, chunkVoxels, MinPrx, MaxPrx);
         }
 
         Debug.Log($"PrxVoxelChunkRenderer: Built {chunkObjects.Count} chunk objects.");
@@ -138,10 +138,10 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
     /// <summary>
     /// Creates one chunk object and assigns its generated mesh.
     /// </summary>
-    private void CreateChunkObject(Vector3Int chunkCoord, List<VoxelData> chunkVoxelsList, float minPrx, float maxPrx)
+    private void CreateChunkObject(Vector3Int chunkCoord, List<VoxelData> chunkVoxels, float minPrx, float maxPrx)
     {
         // Builds the mesh of the chunk from its voxel list
-        Mesh mesh = BuildChunkMesh(chunkVoxelsList, minPrx, maxPrx);
+        Mesh mesh = BuildChunkMesh(chunkVoxels, minPrx, maxPrx);
 
         // Creates one GameObject to render the chunk
         GameObject chunkObject = new GameObject($"VoxelChunk_{chunkCoord.x}_{chunkCoord.y}_{chunkCoord.z}");
@@ -177,20 +177,20 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
     /// <summary>
     /// Builds a mesh containing all visible voxels of one chunk.
     /// </summary>
-    private Mesh BuildChunkMesh(List<VoxelData> samples, float minPrx, float maxPrx)
+    private Mesh BuildChunkMesh(List<VoxelData> voxels, float minPrx, float maxPrx)
     {
         float normalizedPrx;
 
-        // Filters visible samples based on visibility threshold
-        List<VoxelData> visibleSamples = new List<VoxelData>();
+        // Filters visible voxels based on visibility threshold
+        List<VoxelData> visibleVoxels = new List<VoxelData>();
 
-        for (int i = 0; i < samples.Count; i++)
+        for (int i = 0; i < voxels.Count; i++)
         {
-            normalizedPrx = Normalize(samples[i].prxDbm, minPrx, maxPrx);
+            normalizedPrx = Normalize(voxels[i].prxDbm, minPrx, maxPrx);
 
             if (normalizedPrx >= visibilityThreshold)
             {
-                visibleSamples.Add(samples[i]);
+                visibleVoxels.Add(voxels[i]);
             }
         }
 
@@ -198,7 +198,7 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
         // A cube uses 24 vertices: 6 faces * 4 vertices per face
         // It also uses 36 triangle indices: 6 faces * 2 triangles * 3 indices
 
-        int cubeCount = visibleSamples.Count;
+        int cubeCount = visibleVoxels.Count;
         int vertexCount = cubeCount * 24;
         int triangleIndexCount = cubeCount * 36;
 
@@ -249,13 +249,13 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
 
         // 4 - Build every visible voxel from the basic cube geometry
         // Each local corner is rotated with the grid and moved to the voxel world position
-        for (int i = 0; i < visibleSamples.Count; i++)
+        for (int i = 0; i < visibleVoxels.Count; i++)
         {
             // Gets the current voxel
-            VoxelData sample = visibleSamples[i];
+            VoxelData voxel = visibleVoxels[i];
 
             // Normalizes Prx
-            normalizedPrx = Normalize(sample.prxDbm, minPrx, maxPrx);
+            normalizedPrx = Normalize(voxel.prxDbm, minPrx, maxPrx);
 
             // Encodes Prx as heat color plus alpha
             Color cubeColor = EvaluateHeatColor(normalizedPrx);
@@ -268,10 +268,10 @@ public class PrxVoxelChunkRenderer : MonoBehaviour
 
                 // 5 - Duplicate the 4 required corners for each face
                 // This produces the 24 independent vertices used by the final cube
-                vertices[faceVertexStart + 0] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][0]]);
-                vertices[faceVertexStart + 1] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][1]]);
-                vertices[faceVertexStart + 2] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][2]]);
-                vertices[faceVertexStart + 3] = transform.InverseTransformPoint(sample.centerWorldPosition + voxelRotation * cubeVertices[faces[face][3]]);
+                vertices[faceVertexStart + 0] = transform.InverseTransformPoint(voxel.centerWorldPosition + voxelRotation * cubeVertices[faces[face][0]]);
+                vertices[faceVertexStart + 1] = transform.InverseTransformPoint(voxel.centerWorldPosition + voxelRotation * cubeVertices[faces[face][1]]);
+                vertices[faceVertexStart + 2] = transform.InverseTransformPoint(voxel.centerWorldPosition + voxelRotation * cubeVertices[faces[face][2]]);
+                vertices[faceVertexStart + 3] = transform.InverseTransformPoint(voxel.centerWorldPosition + voxelRotation * cubeVertices[faces[face][3]]);
 
                 // 6 - Assign the same color to the 4 vertices of the face
                 colors[faceVertexStart + 0] = cubeColor;

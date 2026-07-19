@@ -1,0 +1,15 @@
+\renewcommand{\keywords}{{\itshape \bfseries Palabras clave - }}
+\chapter*{Resumen} 
+%\addcontentsline{toc}{chapter}{Resumen} % si queremos que aparezca en el índice
+
+El análisis de la cobertura permite estudiar cómo se comporta una señal en un entorno determinado y comprobar si los receptores disponen de condiciones adecuadas para la comunicación. Este análisis depende de distintos factores, como la distancia entre el transmisor y el receptor, la potencia de transmisión, el patrón de radiación de la antena, el modelo de propagación, la altura y la presencia de obstáculos. Por este motivo, una representación tridimensional puede facilitar la interpretación de los resultados y mostrar cómo varía la señal en distintas zonas y alturas del escenario.
+
+En este Trabajo Fin de Grado se desarrolla un simulador tridimensional para el estudio de la cobertura en un entorno urbano. La aplicación combina Unity, encargado de la representación gráfica y de la interacción con el usuario, con un simulador desarrollado en Python, que realiza los cálculos de propagación y de las métricas del enlace. Para la simulación se utilizan modelos de pérdidas como FSPL y ABG, junto con pérdidas adicionales asociadas a los edificios.
+
+El simulador permite reconstruir una aproximación tridimensional del patrón de radiación de una antena a partir de sus cortes horizontal y vertical. También permite representar la potencia recibida mediante mapas de calor tridimensionales y vistas bidimensionales por capas de altura. Además, utiliza receptores móviles, como vehículos y peatones, para analizar la evolución de la potencia recibida y de la relación señal-ruido (SNR) durante distintos recorridos.
+
+El simulador se ha realizado sobre una representación tridimensional del Centro Universitario de Mérida creada para este trabajo. Los resultados obtenidos permiten observar la influencia del patrón de radiación, la altura, los parámetros de la simulación y los obstáculos en la cobertura. De esta forma, el simulador es una herramienta visual e interactiva que permite comparar distintas configuraciones, analizar la cobertura y obtener datos que pueden estudiarse posteriormente mediante gráficas.
+
+%\vspace{5mm} Entre parrafo y parrafo
+
+\keywords{Simulación 3D, canal de propagación, redes inalámbricas, comunicaciones vehiculares, Unity, cobertura, patrón de radiación, SNR.}

@@ -45,7 +45,7 @@ public class SimulationConfigLoader : MonoBehaviour
         {
             gridSimulator.gridSizeMeters = SimulationConfig.gridSizeMeters;
             gridSimulator.voxelSizeMeters = SimulationConfig.voxelSizeMeters;
-            gridSimulator.includeBuildingCollisions = SimulationConfig.buildingCollisions;
+            gridSimulator.includeBuildingCollisions = SimulationConfig.includeBuildingCollisions;
         }
 
         // Applies heatmap rendering parameters

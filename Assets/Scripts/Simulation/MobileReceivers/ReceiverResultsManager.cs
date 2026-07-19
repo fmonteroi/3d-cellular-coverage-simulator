@@ -54,7 +54,7 @@ public class ReceiverResultsTarget
 public class ReceiverResultsManager : MonoBehaviour
 {
     public PatternGainReconstructor patternReconstructor;
-    public Transform emissionPoint;
+    public Transform transmitter;
     public List<ReceiverResultsTarget> targets = new List<ReceiverResultsTarget>();
 
     private bool recording;
@@ -203,19 +203,19 @@ public class ReceiverResultsManager : MonoBehaviour
 
             for (int i = 0; i < target.samples.Count; i++)
             {
-                ReceiverMetricsSnapshot sample = target.samples[i];
+                ReceiverMetricsSnapshot snapshot = target.samples[i];
 
                 writer.WriteLine(string.Join(",",
-                    FormatExport(sample.timeSeconds - initialTime, 3),
-                    FormatExport(sample.distanceMeters, 3),
-                    FormatExport(sample.prxDbm, 3),
-                    FormatExport(sample.snrDb, 3),
-                    FormatExport(sample.worldPosition.x, 3),
-                    FormatExport(sample.worldPosition.y, 3),
-                    FormatExport(sample.worldPosition.z, 3),
-                    FormatExport(sample.txGainDbi, 3),
-                    FormatExport(sample.pathLossDb, 3),
-                    sample.buildingCollisions
+                    FormatExport(snapshot.timeSeconds - initialTime, 3),
+                    FormatExport(snapshot.distanceMeters, 3),
+                    FormatExport(snapshot.prxDbm, 3),
+                    FormatExport(snapshot.snrDb, 3),
+                    FormatExport(snapshot.worldPosition.x, 3),
+                    FormatExport(snapshot.worldPosition.y, 3),
+                    FormatExport(snapshot.worldPosition.z, 3),
+                    FormatExport(snapshot.txGainDbi, 3),
+                    FormatExport(snapshot.pathLossDb, 3),
+                    snapshot.buildingCollisions
                 ));
             }
         }
@@ -351,14 +351,14 @@ public class ReceiverResultsManager : MonoBehaviour
             writer.WriteLine("SIMULATION CONFIGURATION");
             writer.WriteLine("Created: " + DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss"));
 
-            if (emissionPoint != null)
+            if (transmitter != null)
             {
                 writer.WriteLine();
 
                 writer.WriteLine("TRANSMITTER ANTENNA");
-                writer.WriteLine("Emission point world X: " + FormatExport(emissionPoint.position.x, 3));
-                writer.WriteLine("Emission point world Y: " + FormatExport(emissionPoint.position.y, 3));
-                writer.WriteLine("Emission point world Z: " + FormatExport(emissionPoint.position.z, 3));
+                writer.WriteLine("Transmitter world X: " + FormatExport(transmitter.position.x, 3));
+                writer.WriteLine("Transmitter world Y: " + FormatExport(transmitter.position.y, 3));
+                writer.WriteLine("Transmitter world Z: " + FormatExport(transmitter.position.z, 3));
             }
 
             writer.WriteLine();
@@ -394,7 +394,7 @@ public class ReceiverResultsManager : MonoBehaviour
             writer.WriteLine("GRID");
             writer.WriteLine("Size: " + SimulationConfig.gridSizeMeters + " m");
             writer.WriteLine("Voxel size: " + FormatExport(SimulationConfig.voxelSizeMeters, 0) + " m");
-            writer.WriteLine("Building collisions: " + SimulationConfig.buildingCollisions);
+            writer.WriteLine("Building collisions: " + SimulationConfig.includeBuildingCollisions);
 
             writer.WriteLine();
 

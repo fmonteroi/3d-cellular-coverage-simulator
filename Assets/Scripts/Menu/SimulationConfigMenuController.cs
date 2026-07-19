@@ -178,7 +178,7 @@ public class SimulationConfigMenuController : MonoBehaviour
         gridSizeZInput.text = SimulationConfig.gridSizeMeters.z.ToString(CultureInfo.InvariantCulture);
 
         currentVoxelSizeIndex = FindVoxelSizeIndex(SimulationConfig.voxelSizeMeters);
-        buildingCollisionsToggle.isOn = SimulationConfig.buildingCollisions;
+        buildingCollisionsToggle.isOn = SimulationConfig.includeBuildingCollisions;
 
         vehicularRxGainInput.text = FormatFloat(SimulationConfig.vehicularRxGainDbi, "F2");
         cellularRxGainInput.text = FormatFloat(SimulationConfig.cellularRxGainDbi, "F2");
@@ -365,7 +365,7 @@ public class SimulationConfigMenuController : MonoBehaviour
 
         SimulationConfig.gridSizeMeters = new Vector3Int(gridX, gridY, gridZ);
         SimulationConfig.voxelSizeMeters = voxelSizes[currentVoxelSizeIndex];
-        SimulationConfig.buildingCollisions = buildingCollisionsToggle.isOn;
+        SimulationConfig.includeBuildingCollisions = buildingCollisionsToggle.isOn;
 
         SimulationConfig.vehicularRxGainDbi = vehicularRxGainDbi;
         SimulationConfig.cellularRxGainDbi = cellularRxGainDbi;

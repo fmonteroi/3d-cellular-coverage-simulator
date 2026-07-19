@@ -10,6 +10,9 @@ public class PropagationSettings : MonoBehaviour
     // Channel options
     // --------------------------------------------------
 
+    /// <summary>
+    /// Propagation scenarios supported by the external simulator.
+    /// </summary>
     public enum ScenarioType
     {
         Umi,
@@ -17,12 +20,18 @@ public class PropagationSettings : MonoBehaviour
         Indoor
     }
 
+    /// <summary>
+    /// Propagation environment types supported by the external simulator.
+    /// </summary>
     public enum EnvironmentType
     {
         LOS,
         NLOS
     }
 
+    /// <summary>
+    /// Path loss models supported by the external simulator.
+    /// </summary>
     public enum LossesModelType
     {
         ABG,
@@ -82,20 +91,6 @@ public class PropagationSettings : MonoBehaviour
         {
             Debug.LogError("PropagationSettings: PatternGainReconstructor is not ready.");
             return false;
-        }
-        if (showDebug)
-        {
-            LogTest(90, 0, "16.48 dBi");
-            LogTest(90, 90, "2.53 dBi");
-            LogTest(90, 180, "-18.82 dBi");
-            LogTest(90, 230, "-12.84 dBi");
-            LogTest(90, 270, "0.92 dBi");
-
-            LogTest(180, 0, "-18.30 dBi");
-            LogTest(0, 0, "-15.45 dBi");
-
-            // Test angle used during the Matlab comparison
-            LogTest(0, 185, "-35.62 dBi");
         }
 
         return true;
@@ -325,20 +320,6 @@ public class PropagationSettings : MonoBehaviour
             transmitterY = transmitter.position.y,
             transmitterZ = transmitter.position.z
         };
-    }
-
-    /// <summary>
-    /// Prints one gain comparison value used during pattern debugging.
-    /// </summary>
-    private void LogTest(int theta, int phi, string expected)
-    {
-        float relativeDb = patternReconstructor.GetGainDbRelative(theta, phi);
-        float absoluteDbi = patternReconstructor.GetGainDbi(theta, phi);
-
-        Debug.Log(
-            $"Angle (theta={theta} phi={phi}) " +
-            $"relative={relativeDb:F2} dB absolute={absoluteDbi:F2} dBi | Matlab expected: {expected}"
-        );
     }
 
     /// <summary>
