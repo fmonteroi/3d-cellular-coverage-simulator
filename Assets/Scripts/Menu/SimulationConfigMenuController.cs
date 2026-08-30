@@ -57,15 +57,16 @@ public class SimulationConfigMenuController : MonoBehaviour
     public TMP_Dropdown performanceModeDropdown;
 
     [Header("Results & Graphs")]
-    public Toggle campusVehiclePrxDistanceToggle;
-    public Toggle campusVehicleSnrDistanceToggle;
+    public Toggle campusVehiclePrxTimeToggle;
     public Toggle campusVehicleSnrTimeToggle;
-    public Toggle pedestrianPrxDistanceToggle;
-    public Toggle pedestrianSnrDistanceToggle;
-    public Toggle pedestrianSnrTimeToggle;
+
     public Toggle linearVehiclePrxDistanceToggle;
     public Toggle linearVehicleSnrDistanceToggle;
+    public Toggle linearVehiclePrxTimeToggle;
     public Toggle linearVehicleSnrTimeToggle;
+
+    public Toggle pedestrianPrxTimeToggle;
+    public Toggle pedestrianSnrTimeToggle;
 
     private float[] voxelSizes = new float[] { 0.1f, 0.2f, 0.25f, 0.5f, 1f, 2f, 4f, 8f };
     private int currentVoxelSizeIndex = 4;
@@ -189,17 +190,16 @@ public class SimulationConfigMenuController : MonoBehaviour
 
         performanceModeDropdown.value = (int)SimulationConfig.performanceMode;
 
-        campusVehiclePrxDistanceToggle.isOn = SimulationConfig.campusVehicleGraphs.prxDistance;
-        campusVehicleSnrDistanceToggle.isOn = SimulationConfig.campusVehicleGraphs.snrDistance;
+        campusVehiclePrxTimeToggle.isOn = SimulationConfig.campusVehicleGraphs.prxTime;
         campusVehicleSnrTimeToggle.isOn = SimulationConfig.campusVehicleGraphs.snrTime;
-
-        pedestrianPrxDistanceToggle.isOn = SimulationConfig.pedestrianGraphs.prxDistance;
-        pedestrianSnrDistanceToggle.isOn = SimulationConfig.pedestrianGraphs.snrDistance;
-        pedestrianSnrTimeToggle.isOn = SimulationConfig.pedestrianGraphs.snrTime;
 
         linearVehiclePrxDistanceToggle.isOn = SimulationConfig.linearVehicleGraphs.prxDistance;
         linearVehicleSnrDistanceToggle.isOn = SimulationConfig.linearVehicleGraphs.snrDistance;
+        linearVehiclePrxTimeToggle.isOn = SimulationConfig.linearVehicleGraphs.prxTime;
         linearVehicleSnrTimeToggle.isOn = SimulationConfig.linearVehicleGraphs.snrTime;
+
+        pedestrianPrxTimeToggle.isOn = SimulationConfig.pedestrianGraphs.prxTime;
+        pedestrianSnrTimeToggle.isOn = SimulationConfig.pedestrianGraphs.snrTime;
     }
 
     /// <summary>
@@ -376,17 +376,20 @@ public class SimulationConfigMenuController : MonoBehaviour
 
         SimulationConfig.performanceMode = (PerformanceSettingsManager.PerformanceMode)performanceModeDropdown.value;
 
-        SimulationConfig.campusVehicleGraphs.prxDistance = campusVehiclePrxDistanceToggle.isOn;
-        SimulationConfig.campusVehicleGraphs.snrDistance = campusVehicleSnrDistanceToggle.isOn;
+        SimulationConfig.campusVehicleGraphs.prxDistance = false;
+        SimulationConfig.campusVehicleGraphs.snrDistance = false;
+        SimulationConfig.campusVehicleGraphs.prxTime = campusVehiclePrxTimeToggle.isOn;
         SimulationConfig.campusVehicleGraphs.snrTime = campusVehicleSnrTimeToggle.isOn;
-
-        SimulationConfig.pedestrianGraphs.prxDistance = pedestrianPrxDistanceToggle.isOn;
-        SimulationConfig.pedestrianGraphs.snrDistance = pedestrianSnrDistanceToggle.isOn;
-        SimulationConfig.pedestrianGraphs.snrTime = pedestrianSnrTimeToggle.isOn;
 
         SimulationConfig.linearVehicleGraphs.prxDistance = linearVehiclePrxDistanceToggle.isOn;
         SimulationConfig.linearVehicleGraphs.snrDistance = linearVehicleSnrDistanceToggle.isOn;
+        SimulationConfig.linearVehicleGraphs.prxTime = linearVehiclePrxTimeToggle.isOn;
         SimulationConfig.linearVehicleGraphs.snrTime = linearVehicleSnrTimeToggle.isOn;
+
+        SimulationConfig.pedestrianGraphs.prxDistance = false;
+        SimulationConfig.pedestrianGraphs.snrDistance = false;
+        SimulationConfig.pedestrianGraphs.prxTime = pedestrianPrxTimeToggle.isOn;
+        SimulationConfig.pedestrianGraphs.snrTime = pedestrianSnrTimeToggle.isOn;
     }
 
     /// <summary>

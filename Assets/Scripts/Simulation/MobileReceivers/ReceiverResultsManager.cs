@@ -290,6 +290,11 @@ public class ReceiverResultsManager : MonoBehaviour
             arguments += " --snr-distance";
         }
 
+        if (options.prxTime)
+        {
+            arguments += " --prx-time";
+        }
+
         if (options.snrTime)
         {
             arguments += " --snr-time";

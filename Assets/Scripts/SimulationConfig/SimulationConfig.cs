@@ -1,4 +1,4 @@
-using UnityEngine;
+ using UnityEngine;
 
 /// <summary>
 /// Stores the menu values that must persist between the menu scene and the simulation scene.
@@ -37,9 +37,9 @@ public static class SimulationConfig
     public static PerformanceSettingsManager.PerformanceMode performanceMode = PerformanceSettingsManager.PerformanceMode.Low;
 
     // Result graph options
-    public static ReceiverGraphOptions campusVehicleGraphs = new ReceiverGraphOptions(true, true, true);
-    public static ReceiverGraphOptions linearVehicleGraphs = new ReceiverGraphOptions(true, true, true);
-    public static ReceiverGraphOptions pedestrianGraphs = new ReceiverGraphOptions(true, true, true);
+    public static ReceiverGraphOptions campusVehicleGraphs = new ReceiverGraphOptions(false, false, true, true);
+    public static ReceiverGraphOptions linearVehicleGraphs = new ReceiverGraphOptions(true, true, true, true);
+    public static ReceiverGraphOptions pedestrianGraphs = new ReceiverGraphOptions(false, false, true, true);
 
     // SNR boundaries used for the coverage display
     public static float excellentSnrThresholdDb = 20f;
@@ -55,15 +55,17 @@ public class ReceiverGraphOptions
 {
     public bool prxDistance;
     public bool snrDistance;
+    public bool prxTime;
     public bool snrTime;
 
     /// <summary>
     /// Creates a graph option group with its three enabled states.
     /// </summary>
-    public ReceiverGraphOptions(bool prxDistance, bool snrDistance, bool snrTime)
+    public ReceiverGraphOptions(bool prxDistance, bool snrDistance, bool prxTime, bool snrTime)
     {
         this.prxDistance = prxDistance;
         this.snrDistance = snrDistance;
+        this.prxTime = prxTime;
         this.snrTime = snrTime;
     }
 }

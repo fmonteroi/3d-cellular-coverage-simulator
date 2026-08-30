@@ -34,7 +34,7 @@ def save_prx_distance_graph(data, receiver_name, output_directory):
 
     plt.figure(figsize=(10, 6))
 
-    plt.scatter(data["distance"], data["prx"], s=2,color="royalblue")
+    plt.plot(data["distance"], data["prx"], color="royalblue", linewidth=1.5)
 
     plt.title(receiver_name + " - Received Power vs Distance")
     plt.xlabel("Distance to transmitter (m)")
@@ -51,7 +51,7 @@ def save_snr_distance_graph(data, receiver_name, output_directory):
 
     plt.figure(figsize=(10, 6))
 
-    plt.scatter(data["distance"],data["snr"],s=2,color="seagreen")
+    plt.plot(data["distance"], data["snr"], color="seagreen", linewidth=1.5)
 
     plt.title(receiver_name + " - SNR vs Distance")
     plt.xlabel("Distance to transmitter (m)")
@@ -62,6 +62,74 @@ def save_snr_distance_graph(data, receiver_name, output_directory):
     plt.close()
 
 
+def annotate_distance_point(data, index, label):
+    """Annotates one graph point with its distance to the transmitter."""
+    ax = plt.gca()
+
+    # Gets the selected sample values.
+    x = data["time"][index]
+    y = data["prx"][index]
+    distance = data["distance"][index]
+
+    # Marks the selected point on the graph.
+    ax.scatter([x], [y], s=25, color="red", zorder=3)
+
+    # Gets the current axis limits to locate the point inside the plot area.
+    xmin, xmax = ax.get_xlim()
+    ymin, ymax = ax.get_ylim()
+
+    # Converts the point position to relative coordinates between 0 and 1.
+    x_rel = (x - xmin) / (xmax - xmin)
+    y_rel = (y - ymin) / (ymax - ymin)
+
+    # Keeps the annotation inside the horizontal bounds of the plot.
+    text_x = min(max(x_rel, 0.12), 0.88)
+
+    # Places the annotation at the top or bottom depending on the point position.
+    if y_rel > 0.80:
+        text_y = 0.90
+        vertical_alignment = "top"
+    else:
+        text_y = 0.10
+        vertical_alignment = "bottom"
+
+    ax.text(
+        text_x,
+        text_y,
+        "{}\nd = {:.2f} m".format(label, distance),
+        transform=ax.transAxes,
+        fontsize=8,
+        ha="center",
+        va=vertical_alignment,
+        bbox={"facecolor": "white", "alpha": 0.85, "edgecolor": "gray"},
+        zorder=4,
+    )
+    
+    
+def save_prx_time_graph(data, receiver_name, output_directory):
+    """Generates the received power versus time graph with distance annotations."""
+    output_path = os.path.join(output_directory, receiver_name + "_prx_time.png")
+
+    plt.figure(figsize=(10, 6))
+
+    plt.plot(data["time"], data["prx"], color="royalblue", linewidth=1.5, label="Received power")
+
+    min_index = data["prx"].index(min(data["prx"]))
+    max_index = data["prx"].index(max(data["prx"]))
+
+    annotate_distance_point(data, min_index, "Minimum power")
+    annotate_distance_point(data, max_index, "Maximum power")
+
+    plt.title(receiver_name + " - Received Power vs Time")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Received power (dBm)")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    plt.close()
+    
+    
 def calculate_coverage_percentage(data, threshold):
     """Calculates the percentage of measured time above the threshold."""
     if len(data["time"]) < 2:
@@ -139,6 +207,7 @@ def main():
 
     parser.add_argument("--prx-distance",action="store_true")
     parser.add_argument("--snr-distance",action="store_true")
+    parser.add_argument("--prx-time", action="store_true")
     parser.add_argument("--snr-time",action="store_true")
 
     args = parser.parse_args()
@@ -158,6 +227,9 @@ def main():
 
     if args.snr_distance:
         save_snr_distance_graph(data,args.receiver, args.output)
+        
+    if args.prx_time:
+        save_prx_time_graph(data, args.receiver, args.output)
 
     if args.snr_time:
         save_snr_time_graph(data, args.receiver, args.excellent_threshold, args.good_threshold, args.poor_threshold, args.output)
