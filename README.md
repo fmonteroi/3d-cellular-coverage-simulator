@@ -32,7 +32,7 @@ Clone the project:
 
 ```bash
 git clone https://github.com/fmonteroi/3d-cellular-coverage-simulator.git
-cd 3D-Cellular-Coverage-Simulator
+cd 3d-cellular-coverage-simulator
 ```
 
 Alternatively, download it from GitHub using **Code → Download ZIP** and extract the archive.
@@ -50,7 +50,7 @@ With the Unity Editor closed:
 The resulting directory structure should be:
 
 ```text
-TFG_Telematica/
+3d-cellular-coverage-simulator/
 ├── Assets/
 │   ├── Models/
 │   │   ├── Campus.meta
