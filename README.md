@@ -4,7 +4,15 @@ A tool for analysing and visualising radio coverage in an urban environment. It 
 
 The project accompanies the manuscript **A Lightweight Digital Twin Framework for Three-Dimensional Coverage Assessment of Urban Cellular Deployments**, by Francisco Montero Sánchez, José Javier Rico Palomo and Francisco Díaz Barrancas.
 
-> **The campus model is distributed separately.** Download it and add it to the project by following the installation instructions before opening the project in Unity.
+## Download precompiled Windows version
+
+A precompiled 64-bit Windows version is available from the GitHub Releases page:
+
+[Download the latest release](https://github.com/fmonteroi/3d-cellular-coverage-simulator/releases/latest)
+
+The precompiled version includes the Unity application and the portable Python runtime, so Unity Editor and a separate Python installation are not required to run it.
+
+> **Source project only:** the campus model is distributed separately. Download it and add it to the project by following the installation instructions before opening the project in Unity.
 
 ## Features
 
@@ -18,9 +26,16 @@ The project accompanies the manuscript **A Lightweight Digital Twin Framework fo
 
 ## Requirements
 
+### Precompiled version
+
+- **64-bit Windows**.
+- No Unity or separate Python installation is required.
+
+### Source project
+
 - **64-bit Windows**: the bundled Python interpreter and dependencies target this platform.
 - **Unity Hub and Unity Editor 6000.3.6f1**, the version specified in `ProjectSettings/ProjectVersion.txt`.
-- An Internet connection to download the model and restore Unity packages when opening the project for the first time.
+- An Internet connection to download the campus model and restore Unity packages when opening the project for the first time.
 
 The repository includes a **portable Python runtime** and its dependencies: there is no need to install Python separately or start the server manually.
 
@@ -83,7 +98,6 @@ The resulting directory structure should be:
 
 For an initial run on a machine with limited resources, use a small grid or larger voxels. The number of voxels affects computation time and memory usage.
 
-
 ## Results
 
 Each run creates a `Results/<timestamp>/` folder:
@@ -99,7 +113,6 @@ This folder contains:
 - The PNG plots selected in the configuration menu.
 
 Receiver data is exported when the first route traversal is completed; pending records are exported on exit. Plots are generated automatically from these CSV files.
-
 
 ## Scope and limitations
 
