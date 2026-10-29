@@ -4,6 +4,16 @@ A tool for analysing and visualising radio coverage in an urban environment. It 
 
 The project accompanies the manuscript **A Lightweight Digital Twin Framework for Three-Dimensional Coverage Assessment of Urban Cellular Deployments**, by Francisco Montero Sánchez, José Javier Rico Palomo and Francisco Díaz Barrancas.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/main_view.jpeg" alt="3D cellular coverage heatmap and simulation controls" width="700">
+</p>
+
+<p align="center">
+  <img src="docs/images/receiver_view.jpeg" alt="Pedestrian receiver with signal strength and SNR metrics" width="700">
+</p>
+
 ## Download precompiled Windows version
 
 A precompiled 64-bit Windows version is available from the GitHub Releases page:
